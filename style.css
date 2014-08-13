@@ -3,8 +3,7 @@ text-align:center;
 }
 
 #wrap{
-width:500px;
-margin:0 auto;
+margin:0 100px 100px 100px;
 text-align:left;
 border:solid 1px #333;
 }
