@@ -2,46 +2,124 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8">
-    <meta content="IE=edge" http-equiv="X-UA-Compatible">
-    <meta content="width=device-width, initial-scale=1" name="viewport">
-    <meta content="" name="description">
-    <meta content="" name="author">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>menphim's space</title>
-    <link rel="stylesheet" href="../css/bootstrap.css" media="screen">
-    <link rel="stylesheet" href="../css/main.css">
+    <link rel="shortcut icon" href="favicon.ico">
+    <link rel="stylesheet" href="css/bootstrap.css" media="screen">
+    <link rel="stylesheet" href="css/main.css">
 </head>
-<body role="document">
-<nav class="navbar navbar-default navbar-fixed-top">
-    <div class="container">
+
+
+<body>
+<div class="container">
+    <nav class="navbar navbar-inverse navbar-fixed-top">
         <div class="navbar-header">
-            <a href="../" class="navbar-brand">menphim's space</a>
             <button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#navbar-main">
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
+            <a class="navbar-brand" href="">menphim's space</a>
         </div>
         <div class="navbar-collapse collapse" id="navbar-main">
             <ul class="nav navbar-nav">
-                <li><a href="./profile">Profile</a></li>
+                <li class="active"><a href="#home" data-toggle="tab">Home</a></li>
+                <li><a href="#about" data-toggle="tab">About</a></li>
+                <li><a href="#contests" data-toggle="tab">Contests</a></li>
+                <li><a href="#publications" data-toggle="tab">Publications</a></li>
                 <li><a href="http://menphim.hatenablog.com/">Blog</a></li>
-                <!--<li><a href="./product">Product</a></li>-->
                 <li><a href="http://qiita.com/menphim">Qiita</a></li>
                 <li><a href="https://twitter.com/menphim">Twitter</a></li>
                 <li><a href="http://www.amazon.co.jp/registry/wishlist/3SAHAW84MFYWF">Wish List</a></li>
             </ul>
         </div>
-    </div>
-</nav>
+    </nav>
+</div>
 
 <div class="container">
-            <div class="col-lg-8 col-md-7 col-sm-6">
-                <h1>＼＼\\(۶•̀ᴗ•́)۶//／／</h1>
-            </div>
+    <div class="tab-content">
+        <div class="active tab-pane" id="home">
+            <h1>＼＼\\(۶•̀ᴗ•́)۶//／／</h1>
+        </div>
+        <div class="tab-pane" id="about">
+            <h2>Profile</h2>
+            <blockquote>
+                情報系大学生. B4. <br>
+                C++が好き. (出来るとは言っていない. )
+            </blockquote>
+            <h2>Study</h2>
+            <blockquote>
+                C++<br>
+                Python<br>
+                Machine Learning<br>
+                Deep Learning<br>
+                Natural Language Processing<br>
+                Computer Vision
+            </blockquote>
+            <h2>Internship</h2>
+            <blockquote>
+                mixi 2014/8/18〜2014/9/19<br>
+                enish 2014/9/22〜2014/9/26
+            </blockquote>
+            <h2>Event</h2>
+            <blockquote>
+                立命館大学競技プログラミング合宿 2013, 2014, 2015<br>
+                会津大学競技プログラミング合宿 2013<br>
+                JAG ACM-ICPC 夏合宿 2014<br>
+                関西情報系学生団体交流会 2013<br>
+                Scrap Challenge 2014
+            </blockquote>
+            <h2>Advent calendar</h2>
+            <blockquote>
+                プロ生ちゃんアドベントカレンダー 2014(25日目)
+            </blockquote>
+        </div>
+        <div class="tab-pane" id="contests">
+            <h2>2013</h2>
+            <blockquote>
+                ACM-ICPC 2013 東京大会国内予選 順位無し<br>
+                鳥人間コンテスト 2013 人力プロペラ機ディスタンス部門 8位(Rapt)
+            </blockquote>
+            <h2>2014</h2>
+            <blockquote>
+                RoboCup Japan Open 2014 レスキューシミュレーション 2位 &amp; 計測自動制御学会システムインテグレーション部門賞(Ri-one)<br>
+                RoboCup 2014 –João Pessoa– Brazil Rescue Simulation League Agent Competition 8位(Ri-one)<br>
+                ACM-ICPC 2014 東京大会国内予選75位(C++2z)<br>
+                Code Festival 2014 本選182位<br>
+                Code Runner 2014 本選79位<br>
+                Code Formula 2014 本選辞退<br>
+                Unity-chan Game Jam 2014 @BKC 優勝(火星人チーム)<br>
+                あいちゃれ 2014 奨励賞(Polo)
+            </blockquote>
+            <h2>2015</h2>
+            <blockquote>
+                RoboCup Japan Open 2015 @ホームシミュレーション 4位(Tanichu Cluster)<br>
+                Code Thanks Festival 2015 ＿位<br>
+                Code Runner 2015 本選＿位
+            </blockquote>
+        </div>
+        <div class="tab-pane" id="publications">
+            <h2>2014</h2>
+            <blockquote>
+                Ko Miyake, Shinya Oguri, Masahiro Takashita, Takashi Fukui, Takuma Mori, Yosuke Takeuchi, Naoyuki Sugi. RoboCupRescue 2014-Rescue Simulation League. Team Description. Ri-one(Japan), 2014.<a href="http://rione.org/hp/data/tdp/rescue_2014.pdf">[PDF]</a>
+            </blockquote>
+        </div>
+    </div>
 </div>
-<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
-<!-- Include all compiled plugins (below), or include individual files as needed -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
 <script src="js/bootstrap.min.js"></script>
+<script>
+    $(function(){
+        $("[data-toggle=tooltip]").tooltip({
+            placement:'bottom'
+        });
+        $("[data-toggle=popover]").popover({
+
+        });
+    });
+</script>
 </body>
+<footer>
+    <p style="text-align: center;">Copyright &copy; 2014- <a href="https://twitter.com/menphim">menphim</a>. Released under the <a href="https://github.com/thomaspark/bootswatch/blob/gh-pages/LICENSE">MIT license</a>. </p>
+</footer>
 </html>
