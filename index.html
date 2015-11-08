@@ -22,7 +22,7 @@
             <a class="navbar-brand" href="">menphim's space</a>
         </div>
         <div class="navbar-collapse collapse" id="navbar-main">
-            <ul class="nav navbar-nav">
+            <ul class="nav navbar-nav navbar-right" style="padding-right: 15px">
                 <li class="active"><a href="#home" data-toggle="tab">Home</a></li>
                 <li><a href="#about" data-toggle="tab">About</a></li>
                 <li><a href="#contests" data-toggle="tab">Contests</a></li>
@@ -39,7 +39,7 @@
 <div class="container">
     <div class="tab-content">
         <div class="active tab-pane" id="home">
-            <h1>＼＼\\(۶•̀ᴗ•́)۶//／／</h1>
+            <h1 style="text-align: center">＼＼\\(۶•̀ᴗ•́)۶//／／</h1>
         </div>
         <div class="tab-pane" id="about">
             <h2>Profile</h2>
@@ -117,7 +117,13 @@
 
         });
     });
+    $(document).on('click','.navbar-collapse.in',function(e) {
+        if( $(e.target).is('a') ) {
+            $(this).collapse('hide');
+        }
+    });
 </script>
+
 </body>
 <footer>
     <p style="text-align: center;">Copyright &copy; 2014- <a href="https://twitter.com/menphim">menphim</a>. Released under the <a href="https://github.com/thomaspark/bootswatch/blob/gh-pages/LICENSE">MIT license</a>. </p>
