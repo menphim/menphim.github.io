@@ -1,3 +1,13 @@
 body {
     padding-top: 50px;
 }
+
+canvas {
+    padding-left: 0;
+    padding-right: 0;
+    margin-left: auto;
+    margin-right: auto;
+    width: auto;
+    display: inline-block;
+    vertical-align: baseline;
+}
