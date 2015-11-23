@@ -30,7 +30,7 @@
                 <li><a href="#about" data-toggle="tab">About</a></li>
                 <li><a href="#contests" data-toggle="tab">Contests</a></li>
                 <li><a href="#publications" data-toggle="tab">Publications</a></li>
-                <li><a href="#Other" data-toggle="tab">Other</a></li>
+                <li><a href="#other" data-toggle="tab">Other</a></li>
                 <li><a href="http://www.amazon.co.jp/registry/wishlist/3SAHAW84MFYWF">Wish List</a></li>
             </ul>
         </div>
@@ -41,7 +41,7 @@
 ParticleSystem ps;
 
 void setup() {
-  size(window.innerWidth, 100);
+  size(window.innerWidth, window.innerHeight);
   frameRate(30);
   colorMode(RGB,255,255,255,100);
 
@@ -291,9 +291,9 @@ public class Vector3D {
   }
 }
 
-</script><canvas style="image-rendering: -moz-crisp-edges ! important;" id="__processing0" tabindex="0"  width="1500" height="300"></canvas></div>
+</script><canvas style="image-rendering: -moz-crisp-edges ! important;" id="canvas" tabindex="0"></canvas></div>
 
-<div class="container">
+<div id="body" class="container">
     <div class="tab-content">
         <div class="active tab-pane" id="home">
             <h1 style="text-align: center">＼＼\\(۶•̀ᴗ•́)۶//／／</h1>
@@ -368,12 +368,13 @@ public class Vector3D {
                 Ko Miyake, Shinya Oguri, Masahiro Takashita, Takashi Fukui, Takuma Mori, Yosuke Takeuchi, Naoyuki Sugi. RoboCupRescue 2014-Rescue Simulation League. Team Description. Ri-one(Japan), 2014.<a href="paper/rescue_2014.pdf">[PDF]</a>
             </blockquote>
         </div>
-        <div class="tab-pane" id="Other" style="text-align: center">
-            <a href="http://menphim.hatenablog.com/"><img src="img/BLOG.png" width="60" height="60"></a>
+        <div class="tab-pane" id="other" style="text-align: center">
+            <p></p><a href="http://menphim.hatenablog.com/"><img src="img/BLOG.png" width="60" height="60"></a>
             <a href="http://qiita.com/menphim"><img src="img/qiita.png" width="60" height="60"></a>
             <a href="https://twitter.com/menphim"><img src="img/twitter.png" width="60" height="60"></a>
         </div><p></p>
     </div>
+    <p style="text-align: center;">Copyright &copy; 2014- <a href="https://twitter.com/menphim">menphim</a>. Released under the <a href="https://github.com/thomaspark/bootswatch/blob/gh-pages/LICENSE">MIT license</a>. Based on <a href="http://getbootstrap.com/">Bootstrap. </a></p>
 </div>
 <script>
     $(function(){
@@ -393,6 +394,6 @@ public class Vector3D {
 
 </body>
 <footer>
-    <p style="text-align: center;">Copyright &copy; 2014- <a href="https://twitter.com/menphim">menphim</a>. Released under the <a href="https://github.com/thomaspark/bootswatch/blob/gh-pages/LICENSE">MIT license</a>. Based on <a href="http://getbootstrap.com/">Bootstrap. </a></p>
+    <!--<p id="footer" style="text-align: center;">Copyright &copy; 2014- <a href="https://twitter.com/menphim">menphim</a>. Released under the <a href="https://github.com/thomaspark/bootswatch/blob/gh-pages/LICENSE">MIT license</a>. Based on <a href="http://getbootstrap.com/">Bootstrap. </a></p>-->
 </footer>
 </html>
