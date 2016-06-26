@@ -14,3 +14,7 @@ body #canvas{
     right:0;
     left:0;}
 
+td.period {
+    vertical-align: top;
+    width: 190px;
+}
