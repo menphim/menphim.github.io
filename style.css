@@ -1,0 +1,32 @@
+body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+  }
+  
+  section {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  h1 {
+    font-size: 4rem;
+    text-align: center;
+  }
+  
+  #about-content,
+  #experience-content,
+  #research-content,
+  #achievement-content {
+    font-size: 1.2rem;
+    line-height: 2rem;
+  }
+
+  .image img{
+    border-radius: 100px;
+    -webkit-border-radius: 100px;
+    -moz-border-radius: 100px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}

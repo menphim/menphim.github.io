@@ -1,477 +1,106 @@
 <!DOCTYPE html>
 <html lang="ja">
-        <head>
-                    <meta charset="utf-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1">
-                    <title>Takuma Mori</title>
-                    <link rel="shortcut icon" href="favicon.ico">
-                    <link rel="stylesheet" href="css/bootstrap.css" media="screen">
-                    <link rel="stylesheet" href="css/custom.min.css">
-                    <script src="js/jquery.min.js"></script>
-                    <script src="js/bootstrap.min.js"></script>
-                    <script src="js/analytics.js"></script>
-        </head>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Takuma Mori</title>
+    <link rel="shortcut icon" href="favicon.ico">
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.0/css/bootstrap.min.css" />
+    <!-- 自作のCSS -->
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+          <div class="container">
+        <a class="navbar-brand" href="#">Takuma Mori</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+              <a class="nav-link" href="#about">About</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#experience">Experience</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#research">Research</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#contest">Contests</a>
+              </li>
+              <li class="nav-item">
+              <a class="nav-link" href="#achievement">Awards</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
 
+    <section id="about" class="py-5">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12">
+            <div class="col-lg-12">
+                <h1 style="text-align: center">Welcome to my website!<br>＼＼\\(۶•̀ᴗ•́)۶//／／</h1>
+        </div>
+        <!-- <div class="image">
+            <img src="img/me.jpg" title="Takuma Mori">
+        </div> -->
+                    <!-- <h1 class="mb-4">自己紹介</h1> -->
+            <div id="about-content"></div>
+          </div>
+        </div>
+      </div>
+    </section>
 
-        <body>
-                <div class="navbar navbar-default navbar-fixed-top">
-                    <div class="container">
-                                <div class="navbar-header">
-                                    <a class="navbar-brand" href="">Takuma Mori</a>
-                                    <button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#navbar-main">
-                                        <span class="icon-bar"></span>
-                                        <span class="icon-bar"></span>
-                                        <span class="icon-bar"></span>
-                                    </button>
-                                </div>
-                                <div class="navbar-collapse collapse" id="navbar-main">
-                                     <ul class="nav navbar-nav navbar-right">
-                                        <li><a href="#profile">About</a></li>
-                                        <li><a href="#research">Research</a></li>
-                                        <li><a href="#contests">Contests</a></li>
-                                        <li><a href="#awards">Awards</a></li>
-                                        <li><a href="#activities">Activities</a></li>
-                                        <li><a href="#other">Links</a></li>
-                                    </ul>
-                                </div>
-                    </div>
-                </div>
-                <script src="js/toggl.js"></script>
+    <section id="experience" class="py-5">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12">
+            <!-- <h1 class="mb-4">経歴</h1> -->
+            <div id="experience-content"></div>
+          </div>
+        </div>
+      </div>
+    </section>
 
-                    <div class="container">
+    <section id="research" class="py-5">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12">
+            <!-- <h1 class="mb-4">研究業績</h1> -->
+            <div id="research-content"></div>
+          </div>
+        </div>
+    </section>
 
-
-                        <div class="bs-docs-section clearfix">
-                            <div class="row">
-                                        <div class="col-lg-12">
-                                                <h1 style="text-align: center">Welcome to my website!<br>＼＼\\(۶•̀ᴗ•́)۶//／／</h1>
-                                        </div>
-                                        <div class="image">
-                                            <img src="img/me.jpg" title="Takuma Mori">
-                                        </div>
-                            </div>
-                        </div>
-
-
-
-
-                   <div class="bs-docs-section clearfix">
-                        <div class="row">
-                          <div class="col-lg-12">
-                            <div class="page-header">
-                              <h1 id="profile">About</h1>
-
-                                        <h2>Experience</h2>
-                                          <table class="table">
-                                            <thead>
-                                            <tr>
-                                              <th align="left">Period</th>
-                                              <th align="left">Job</th>
-                                            </tr>
-                                            </thead>
-                                          <tbody><tr>
-                                            <td align="left">Apr. 2018 - Now</td>
-                                            <td align="left">Research Engineer at Motor Company.</td>
-                                          </tr><tr>
-                                            <td align="left">Jun. 2017 - Jul. 2017</td>
-                                            <td align="left">Teaching Assistant of NAIST, Theme:Sequential Data Modeling</td>
-                                          </tr>
-                                          <tr>
-                                            <td align="left">Jan. 2017 - Feb.2017</td>
-                                            <td align="left">Intern at NTT Communication Science Laboratories.</td>
-                                          </tr>
-                                          <tr>
-                                            <td align="left">Aug. 2014 - Sep. 2014</td>
-                                            <td align="left">Intern at mixi, inc.</td>
-                                          </tr>
-                                          </tbody></table>
-                            <h2  id="about">Education</h2>
-                                          <table class="table">
-                                            <thead>
-                                            <tr>
-                                              <th align="left">Period</th>
-                                              <th align="left">Course</th>
-                                            </tr>
-                                            </thead>
-                                          <tbody><tr>
-                                            <td align="left">Apr. 2016 - Mar. 2018</td>
-                                            <td align="left">Master of Engineering, Augmented Human Communication Laboratory,  Graduate School of Information Science, Nara Institute of Science and Technology</td>
-                                          </tr>
-                                          <tr>
-                                            <td align="left">Apr. 2012 - Mar. 2016</td>
-                                            <td align="left">Bachelor of Engineering, Emergent System Laboratory, Department of Human and Computer Intelligence, Ritsumeikan University</td>
-                                          </tr>
-                                          </tbody></table>
-
-                                        <h2>Fields of Study</h2>
-                                        <table class="table">
-                                          <thead>
-                                          <tr>
-                                            <th align="left">Fields</th>
-                                          </tr>
-                                          </thead>
-                                        <tbody><tr>
-                                          <td align="left">Automatic Speech Recognition</td>
-                                        </tr>
-                                        <tr>
-                                          <td align="left">Machine Learning</td>
-                                        </tr>
-                                        <tr>
-                                          <td align="left">Robot Vision</td>
-                                        </tr>
-                                        </tbody></table>
-
-                                        <!-- <h2>Operating System</h2>
-                                        <blockquote>
-                                            Ubuntu<br>
-                                            Debian<br>
-                                            CentOS<br>
-                                            MacOS
-                                        </blockquote>
-                                        <h2>Languages</h2>
-                                        <blockquote>
-                                            C++<br>
-                                            Python<br>
-                                            Java
-                                        </blockquote> -->
-                                        <!-- <h2>Event</h2>
-                                        <blockquote>
-                                            RUPC 2013, 2014, 2015<br>
-                                            AUPC 2013<br>
-                                            JAG ACM-ICPC Summer Camp 2014<br>
-                                            KC3 2013<br>
-                                            11th Scrap Challenge
-                                        </blockquote> -->
-
-
-
-
-                                        <div class="page-header">
-                                          <h1 id="research">Refereed Publications</h1>
-                        </div>
-                                        <h2>International Conference</h2>
-                                        <table class="table">
-                                        <thead>
-                                        <tr>
-                                          <th align="left">Year</th>
-                                          <th align="left">Title</th>
-                                        </tr>
-                                        </thead>
-                                        <tbody><tr>
-                                          <td align="left">2018</td>
-                                          <td align="left"><u> Takuma Mori,</u> Andros Tjandra, Sakriani Sakti and Satoshi Nakamura. Compressing End-to-end ASR Networks by Tensor-Train Decomposition. In Interspeech 2018.</td>
-                                        </tr>
-                                        <tr>
-                                          <td align="left">2017</td>
-                                          <td align="left">Keisuke Kinoshita, Marc Delcroix, Haeyong Kwon, <u>Takuma Mori</u> and Tomohiro Nakatani. Neural network-based spectrum estimation for online WPE dereverberation. In Interspeech 2017.</td>
-                                        </tr>
-                                        <tr>
-                                          <td align="left">2016</td>
-                                          <td align="left">Yusuke Fuchida, Tadahiro Taniguchi, Toshiaki Takano, <u>Takuma Mori</u>, Kazuhito Takenaka, and Takashi Bando. Driving word2vec: distributed semantic vector representation for symbolized naturalistic driving data. In Intelligent Vehicles Symposium (IV), 2016 IEEE. IEEE, 2016.</td>
-                                        </tr>
-                                        <tr>
-                                          <td align="left">2014</td>
-                                          <td align="left">Ko Miyake, Shinya Oguri, Masahiro Takashita, Takashi Fukui, <u>Takuma Mori</u>, Yosuke Takeuchi and Naoyuki Sugi. In RoboCup Rescue 2014-Rescue Simulation League Team Description Ri-one(Japan). In RoboCup 2014.<a href="paper/rescue_2014.pdf">[PDF]</a></td>
-                                        </tr>
-                                        </tbody></table>
-                                        <h2>Domestic Conference</h2>
-                                        <table class="table">
-                                        <thead>
-                                        <tr>
-                                          <th align="left">Year</th>
-                                          <th align="left">Title</th>
-                                        </tr>
-                                        </thead>
-                                        <tbody><tr>
-                                          <td align="left">2020</td>
-                                          <td align="left">長内淳樹, <u>森巧磨</u>, 山崎雅起, 谷口恭弘. コンテクストを考慮したChannel-wise AttentionによるSemantic Segmentationの改善. In The 23rd Meeting on Image Recognition and Understanding (MIRU), 2020. </td>
-                                        </tr>
-                                        </tbody></table>
-
-                                          <div class="page-header">
-                                            <h1 id="research">Unrefereed Publications</h1>
-                          </div>
-                          <h2>Domestic Conference</h2>
-                          <table class="table">
-                          <thead>
-                          <tr>
-                            <th align="left">Year</th>
-                            <th align="left">Title</th>
-                          </tr>
-                          </thead>
-                          <tbody>
-                          <tr>
-                            <td align="left">2017</td>
-                            <td align="left">
-                            <u>森 巧磨</u>, Andros Tjandra, Sakriani Sakti, 中村 哲. テンソルトレイン分解によるEnd-to-End自動音声認識モデルの圧縮. 研究報告音声言語情報処理（SLP）,2017-SLP-119(18),1-4 (2017-12-14), 2188-8663 </td>
-                          </tr>
-                          </tbody></table>
-
-                          <div class="page-header">
-                                            <h1 id="research">Patents</h1>
-                          </div>
-                          <table class="table">
-                          <thead>
-                          <tr>
-                            <th align="left">Year</th>
-                            <th align="left">Title</th>
-                          </tr>
-                          </thead>
-                          <tbody>
-                          <tr>
-                            <td align="left">2020</td>
-                            <td align="left">
-                            Pending </td>
-                          </tr>
-                          <tr>
-                            <td align="left">2019</td>
-                            <td align="left">
-                            Pending </td>
-                          </tr>
-                          </tbody></table>
-
-
-
-                          <div class="page-header">
-                                          <h1 id="contests">Contests</h1>
-                        </div>
-                        <h2>International</h2>
-
-                                          <table class="table">
-                                          <thead>
-                                          <tr>
-                                            <th align="left">Year</th>
-                                            <th align="left">Contest</th>
-                                            <th align="left">Team</th>
-                                            <th align="left">Rank</th>
-                                          </tr>
-                                          </thead>
-                                          <tbody><tr>
-                                            <td align="left">2017</td>
-                                            <td align="left">Kaggle Text Normalization Challenge - Russian Language</td>
-                                            <td align="left"></td>
-                                            <td align="left">47th(Bronze)</td>
-                                          </tr>
-                                          <tr>
-                                            <td align="left">2017</td>
-                                            <td align="left">Kaggle Instacart Market Basket Analysis</td>
-                                            <td align="left"></td>
-                                            <td align="left">180th(Bronze)</td>
-                                          </tr>
-                                          <tr>
-                                            <td align="left">2016</td>
-                                            <td align="left">ACM-ICPC 2016 Asia Tsukuba Regional</td>
-                                            <td align="left">chasen_no_sato</td>
-                                            <td align="left">26th</td>
-                                          </tr>
-                                          <tr>
-                                            <td align="left">2014</td>
-                                            <td align="left">RoboCup 2014 –João Pessoa– Brazil Rescue Simulation League Agent Competition</td>
-                                            <td align="left">Ri-one</td>
-                                            <td align="left">8th</td>
-                                          </tr>
-                                          <tr>
-                                            <td align="left">2013</td>
-                                            <td align="left">2013 JAPAN INTERNATIONAL BIRDMAN RALLY Human‐Powered Propeller Machine Distance Division</td>
-                                            <td align="left">Rapt</td>
-                                            <td align="left">8th</td>
-                                          </tr>
-                                          </tbody></table>
-
-
-                                    <h2>Domestic</h2>
-                                                      <table class="table">
-                                                        <thead>
-                                                        <tr>
-                                                          <th align="left">Year</th>
-                                                          <th align="left">Contest</th>
-                                                          <th align="left">Team</th>
-                                                          <th align="left">Rank</th>
-                                                        </tr>
-                                                        </thead>
-                                                        <tbody><tr>
-                                                          <td align="left">2016</td>
-                                                          <td align="left">ACM-ICPC 2016 Japan Online First-Round Contest</td>
-                                                          <td align="left">chasen_no_sato</td>
-                                                          <td align="left">20th</td>
-                                                        </tr>
-                                                        <tr>
-                                                          <td align="left"></td>
-                                                          <td align="left">Code Festival 2016 FINAL</td>
-                                                          <td align="left"></td>
-                                                          <td align="left">211st</td>
-                                                        </tr>
-                                                        <tr>
-                                                          <td align="left"></td>
-                                                          <td align="left">Discovery Channel Code Contest FINAL</td>
-                                                          <td align="left"></td>
-                                                          <td align="left">75th</td>
-                                                        </tr>
-                                                        <tr>
-                                                          <td align="left">2015</td>
-                                                          <td align="left">RoboCup Japan Open 2015 @home Simulation</td>
-                                                          <td align="left">Tanichu Cluster</td>
-                                                          <td align="left">4th</td>
-                                                        </tr>
-                                                        <tr>
-                                                          <td align="left"></td>
-                                                          <td align="left">Code Runner 2015 FINAL</td>
-                                                          <td align="left"></td>
-                                                          <td align="left">82nd</td>
-                                                        </tr>
-                                                        <tr>
-                                                          <td align="left">2014</td>
-                                                          <td align="left">RoboCup Japan Open 2014 Rescue Simulation</td>
-                                                          <td align="left">Ri-one</td>
-                                                          <td align="left">2nd</td>
-                                                        </tr>
-                                                        <tr>
-                                                          <td align="left"></td>
-                                                          <td align="left">ACM-ICPC 2014 Japan Online First-Round Contest</td>
-                                                          <td align="left">C++2z(RiPPro)</td>
-                                                          <td align="left">75th</td>
-                                                        </tr>
-                                                        <tr>
-                                                          <td align="left"></td>
-                                                          <td align="left">Unity-chan Game Jam 2014 @BKC</td>
-                                                          <td align="left">Kaseijin Team</td>
-                                                          <td align="left">1st</td>
-                                                        </tr>
-                                                        <tr>
-                                                          <td align="left"></td>
-                                                          <td align="left">Code Festival 2014 FINAL</td>
-                                                          <td align="left"></td>
-                                                          <td align="left">182nd</td>
-                                                        </tr>
-                                                        <tr>
-                                                          <td align="left"></td>
-                                                          <td align="left">Code Runner 2014 FINAL</td>
-                                                          <td align="left"></td>
-                                                          <td align="left">79th</td>
-                                                        </tr>
-                                                        </tbody></table>
-                                        <div class="page-header">
-                                          <h1 id="awards">Awards</h1>
-                        </div>
-                        <h2>International</h2>
-                        <table class="table">
-                        <thead>
-                        <tr>
-                          <th align="left">Year</th>
-                          <th align="left">Organ</th>
-                          <th align="left">Team</th>
-                          <th align="left">Award</th>
-                        </tr>
-                        </thead>
-                        <tbody><tr>
-                          <td align="left">2016</td>
-                          <td align="left">ACM-ICPC 2016 Asia Tsukuba Regional</td>
-                          <td align="left">chasen_no_sato</td>
-                          <td align="left">IBM z 13 x2 Award</td>
-                        </tr>
-                        </tbody></table>
-                        <h2>Domestic</h2>
-                        <table class="table">
-                        <thead>
-                        <tr>
-                          <th align="left">Year</th>
-                          <th align="left">Organ</th>
-                          <th align="left">Team</th>
-                          <th align="left">Award</th>
-                        </tr>
-                        </thead>
-                        <tbody><tr>
-                          <td align="left">2016</td>
-                          <td align="left">ACM-ICPC 2016 Japan Online First-Round Contest</td>
-                          <td align="left">chasen_no_sato</td>
-                          <td align="left">Director's Award</td>
-                        </tr>                        <tr>
-                          <td align="left">2014</td>
-                          <td align="left">RoboCup Japan Open 2014 Rescue Simulation</td>
-                          <td align="left">Ri-one</td>
-                          <td align="left">計測自動制御学会システムインテグレーション部門賞</td>
-                        </tr><tr>
-                          <td align="left"></td>
-                          <td align="left">あいちゃれ 2014</td>
-                          <td align="left">Polo</td>
-                          <td align="left">奨励賞</td>
-                        </tr>
-                        </tbody></table>
-
-                                        <div class="page-header">
-                                          <h1 id="activities">Activities</h1>
-                                        </div>
-                                        <h2>Collaborative Research</h2>
-                                          <table class="table">
-                                          <thead>
-                                          <tr>
-                                            <th align="left">Period</th>
-                                            <th align="left">Organ</th>
-                                          </tr>
-                                          </thead>
-                                          <tbody><tr>
-                                            <td align="left">Apr. 2015 - Mar.2016</td>
-                                            <td align="left">DENSO CORPORATION.</td>
-                                          </tr>
-                                          </tbody></table>
-
-
-                                        <h2>Competitive Research Funding</h2>
-                                          <table class="table">
-                                          <thead>
-                                          <tr>
-                                            <th align="left">Period</th>
-                                            <th align="left">Fund</th>
-                                          </tr>
-                                          </thead>
-                                          <tbody><tr>
-                                            <td align="left">Aug.2016 - Mar.2017</td>
-                                            <td align="left">CICP2016 "Are You a Werewolf?: Creation of a High Context Multimodal Corpus of Werewolf Games“</td>
-                                          </tr>
-                                          </tbody></table>
-
-
-
-                                        <h2>Certifications</h2>
-                                          <table class="table">
-                                          <thead>
-                                          <tr>
-                                            <th align="left">Date</th>
-                                            <th align="left">Certification</th>
-                                          </tr>
-                                          </thead>
-                                          <tbody><tr>
-                                            <td align="left">Nov.2012</td>
-                                            <td align="left">Fundamental Information Technology Engineer Examination</td>
-                                          </tr><tr>
-                                            <td align="left">Mar.2016</td>
-                                            <td align="left">enPiT Cloud Spiral</td>
-                                          </tr>
-                                          </tbody></table>
-                                            <br>
-
-
-                                        <div class="page-header">
-                                          <h1 id="other">Links</h1>
-                        </div>
-                                    <div class="tab-pane" id="other" style="text-align: center">
-                                        <a href="https://twitter.com/menphim"><img src="img/twitterlogo.png" height="60"></a>
-                                        <a href="https://www.facebook.com/profile.php?id=100008296462540"><img src="img/fblogo.png" height="60"></a>
-                                        <!-- <a href="http://menphim.hatenablog.com/"><img src="img/hatenablog-logo.png" height="60"></a> -->
-                                        <a href="http://github.com/menphim"><img src="img/github.png" height="60"></a>
-                                        <a href="https://www.kaggle.com/menphim"><img src="img/kaggle.png" height="60"></a>
-                                        <a href="https://deepanalytics.jp/profile/4325"><img src="img/deepanalytics.png" height="60"></a>
-                                        <!-- <a href="http://qiita.com/menphim"><img src="img/qiita-favicon.png" height="60"></a> -->
-                                        <a href="http://www.slideshare.net/MoriTakuma"><img src="img/sslogo.png" height="60"></a>
-                                        <!-- <a href="https://projecteuler.net/progress=menphim"><img src="http://projecteuler.net/profile/menphim.png" style="border-style:initial;border-color:initial;border-style:initial;border-color:initial" border="0"></a> -->
-                                    </div>
-
-                         </div>
-                         </div>
-                    </div>
+    <section id="contest" class="py-5">
+        <div class="container">
+          <div class="row">
+            <div class="col-md-12">
+              <!-- <h1 class="mb-4">大会成績</h1> -->
+              <div id="contest-content"></div>
             </div>
-        </body>
+          </div>
+        </div>
+      </section>
 
-        <footer><p style="text-align: center;">Copyright &copy; 2014- Takuma Mori.</p>
-        </footer>
+      <section id="achievement" class="py-5">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12">
+            <!-- <h1 class="mb-4">受賞歴</h1> -->
+            <div id="achievement-content"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/2.1.3/marked.min.js"></script>
+    <script src="app.js"></script>
+  </body>
 </html>
