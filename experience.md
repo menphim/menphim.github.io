@@ -10,6 +10,7 @@
 
 ## Education
 * Apr. 2016 - Mar. 2018: Master of Engineering, Augmented Human Communication Laboratory,  Graduate School of Information Science, Nara Institute of Science and Technology
+* Apr. 2016 - Mar. 2017: enPiT-Cloud Cloud Spiral (Cloud Specialist Program Initiative for Reality-based Advanced Learning)
 * Apr. 2012 - Mar. 2016: Bachelor of Engineering, Emergent System Laboratory, Department of Human and Computer Intelligence, Ritsumeikan University
 
 ## Contest Rank, Certification
