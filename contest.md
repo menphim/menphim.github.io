@@ -8,7 +8,7 @@
 ## Algorithm
 * 26th place in ACM-ICPC 2016 Asia Tsukuba Regional
 * 20th place in ACM-ICPC 2016 Japan Online First-Round Contest
-* 211st place in Code Festival 2016 FINAL
+* 211th place in Code Festival 2016 FINAL
 * 75th place in Discovery Channel Code Contest FINAL
 * 75th place in ACM-ICPC 2014 Japan Online First-Round Contest
 * 182nd place in Code Festival 2014 FINAL
@@ -22,7 +22,7 @@
 ## Robotics
 * 4th place in RoboCup Japan Open 2015 @home Simulation
 
-## Game
+## Hackathon
 * 1st place in Unity-chan Game Jam 2014 @BKC
 
 ## Other
