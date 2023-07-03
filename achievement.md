@@ -13,6 +13,4 @@
 
 ## Hackathon
 * 奨励賞 in あいちゃれ 2014
-
-## Game
 * 1st place in Unity-chan Game Jam 2014 @BKC
