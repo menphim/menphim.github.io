@@ -160,7 +160,7 @@ a:focus-visible {
 
 .hero-grid {
   display: grid;
-  grid-template-columns: 1.4fr 1fr;
+  grid-template-columns: 1fr 1.2fr;
   gap: 28px;
   align-items: center;
 }
@@ -470,6 +470,10 @@ code {
     height: 100px;
     border-radius: 50%;
     display: block;
+  }
+
+  .hero-actions {
+    justify-content: center;
   }
 
   .hero-grid,
