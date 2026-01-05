@@ -2,6 +2,7 @@
 
 ## International Conference
 
+* Yu Horiuchi, Shuichi Akizuki, Manabu Hashimoto, <u>Takuma Mori</u>, Kenji Nishimiya. Proposal of an object recognition method capable of detecting and clustering unknown objects. Proceedings Volume International Workshop on Advanced Imaging Technology (IWAIT) 2024, 131641X (2024). [DOI](https://doi.org/10.1117/12.3018711)
 * <u>Takuma Mori,</u> Andros Tjandra, Sakriani Sakti and Satoshi Nakamura. Compressing End-to-end ASR Networks by Tensor-Train Decomposition. In Interspeech 2018.
 * Keisuke Kinoshita, Marc Delcroix, Haeyong Kwon, <u>Takuma Mori</u> and Tomohiro Nakatani. Neural network-based spectrum estimation for online WPE dereverberation. In Interspeech 2017.
 * Yusuke Fuchida, Tadahiro Taniguchi, Toshiaki Takano, <u>Takuma Mori</u>, Kazuhito Takenaka, and Takashi Bando. Driving word2vec: distributed semantic vector representation for symbolized naturalistic driving data. In Intelligent Vehicles Symposium (IV), 2016 IEEE. IEEE, 2016.
@@ -9,7 +10,8 @@
 
 ## Domestic Conference
 
-* 竹中 悠，<u>森 巧磨</u>，饗庭 大，名取 洋一，西宮 憲治，青木 義満. 深度推定を利用したセマンティックセグメンテーションにおける不確実性推定. 第29回画像センシングシンポジウム（SSII2023），IS2-07，June 2022.
+* 堀内 裕生，秋月 秀一，橋本 学，<u>森 巧磨</u>，西宮 憲治. 未知物体の検出とクラスタリング機能を備えた物体認識手法の提案. ビジョン技術の実利用ワークショップ（ViEW2023），IS1-21，Dec. 2023.
+* 竹中 悠，<u>森 巧磨</u>，饗庭 大，名取 洋一，西宮 憲治，青木 義満. 深度推定を利用したセマンティックセグメンテーションにおける不確実性推定. 第29回画像センシングシンポジウム（SSII2023），IS2-07，June 2023.
 * 吉川 建太郎，<u>森 巧磨</u>，名取 洋一，西宮 憲司，青木 義満. 3D Multi-Object Tracking におけるマルチセンサーの非同期性への適応．動的画像処理実利用化ワークショップ2023(DIA2023)，Mar. 2023.
 * 竹中悠，<u>森巧磨</u>，谷口恭弘，青木義満．不確実性を考慮したセマンティックマップの生成. 第27回 知能メカトロニクスワークショップ, IM10-4, Sep. 2022.
 * 木村 秋斗、早川 和希、<u>森 巧磨</u>、長内 淳樹、平川 翼、山下 隆義、藤吉 弘亘. Grid-wise-attentionによる物体検出の視覚的説明. 第28回画像センシングシンポジウム(SSII2022) 2022年6月
