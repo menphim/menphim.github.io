@@ -184,6 +184,8 @@ a:focus-visible {
   object-fit: cover;
   border: 2px solid var(--border);
   box-shadow: var(--shadow);
+  display: block;
+  overflow: hidden;
 }
 
 .hero-intro h1 {
@@ -466,6 +468,8 @@ code {
   .hero-avatar {
     width: 100px;
     height: 100px;
+    border-radius: 50%;
+    display: block;
   }
 
   .hero-grid,
