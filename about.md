@@ -2,12 +2,18 @@
 
 Hello and welcome to my website! My name is Takuma Mori, and I am a robotic vision engineer with expertise in a range of cutting-edge technologies. On this site, you can explore my professional background, research accomplishments, competition achievements, and awards.
 
-As a robotic vision engineer, my primary focus revolves around 
-* object detection
-* multi-object tracking
-* obstacle detection
-* navigation
+As a robotic vision engineer, my primary focus revolves around:
 
-By leveraging these technologies, I strive to contribute to the advancements in the field of robotics and autonomous vehicles, constantly pushing the boundaries of what's possible.
+* Perception
+  * Object detection
+  * Multi-object tracking
+  * Segmentation
+* Navigation
+* MLOps
+  * Continual learning
+  * Model compression
+* Vision-language models
 
-Please feel free to explore my website and learn more about my work. If you have any questions don't hesitate to get in touch. I look forward to connecting with you!
+By leveraging these technologies, I strive to contribute to advancements in the field of robotics and autonomous vehicles, constantly pushing the boundaries of what's possible.
+
+Please feel free to explore my website and learn more about my work. If you have any questions, please don't hesitate to get in touch. I look forward to connecting with you!

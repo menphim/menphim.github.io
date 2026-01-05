@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
     <div class="bg-graphic"></div>
     <header class="site-header">
       <div class="container nav-bar">
@@ -31,25 +32,26 @@
       </div>
     </header>
 
-    <main>
+    <main id="main-content">
       <section class="hero" id="top">
         <div class="container hero-grid">
           <div class="hero-copy">
-            <p class="eyebrow">Researcher · Engineer · Maker</p>
-            <h1>Building systems that blend rigor with playful curiosity.</h1>
-            <p class="lede">
-              Selected research, competitions, and projects from the lab and beyond.
-              Scroll to dive deeper or jump to the section you need.
-            </p>
+            <div class="hero-profile">
+              <img src="img/me.jpg" alt="Takuma Mori" class="hero-avatar" loading="lazy" />
+              <div class="hero-intro">
+                <h1>Takuma Mori</h1>
+                <p class="eyebrow">Robotic Vision Engineer</p>
+              </div>
+            </div>
             <div class="hero-actions">
-              <a class="btn primary" href="#research">View research</a>
-              <a class="btn ghost" href="#about">About me</a>
+              <a class="btn primary" href="#about">About me</a>
+              <a class="btn ghost" href="#research">View research</a>
             </div>
           </div>
           <div class="hero-card">
             <p class="eyebrow">Current focus</p>
-            <h2>Human-centered AI, robotics, and competitive programming.</h2>
-            <p class="microcopy">This site pulls content from markdown so updates stay frictionless.</p>
+            <h2>Robotic vision, autonomous systems, and machine learning.</h2>
+            <p class="microcopy">Specializing in object detection, tracking, and navigation for robotics applications.</p>
           </div>
         </div>
       </section>
@@ -69,8 +71,8 @@
         <div class="container section-grid">
           <header class="section-header">
             <p class="eyebrow">Experience</p>
-            <h2>Roles & work</h2>
-            <p class="lede">Industry, internships, and collaborations.</p>
+            <h2>Work & education</h2>
+            <p class="lede">Professional experience, internships, and academic background.</p>
           </header>
           <div class="surface" id="experience-content"></div>
         </div>
@@ -80,8 +82,8 @@
         <div class="container section-grid">
           <header class="section-header">
             <p class="eyebrow">Research</p>
-            <h2>Publications & artifacts</h2>
-            <p class="lede">Peer-reviewed work, prototypes, and experiments.</p>
+            <h2>Publications</h2>
+            <p class="lede">Peer-reviewed papers and conference presentations.</p>
           </header>
           <div class="surface" id="research-content"></div>
         </div>
@@ -91,8 +93,8 @@
         <div class="container section-grid">
           <header class="section-header">
             <p class="eyebrow">Contests</p>
-            <h2>Competitive highlights</h2>
-            <p class="lede">Key scores and standings.</p>
+            <h2>Competition results</h2>
+            <p class="lede">Rankings and achievements in various competitions.</p>
           </header>
           <div class="surface" id="contest-content"></div>
         </div>
@@ -102,13 +104,24 @@
         <div class="container section-grid">
           <header class="section-header">
             <p class="eyebrow">Awards</p>
-            <h2>Recognition</h2>
-            <p class="lede">Scholarships, prizes, and notable mentions.</p>
+            <h2>Awards & honors</h2>
+            <p class="lede">Research awards, competition prizes, and notable achievements.</p>
           </header>
           <div class="surface" id="achievement-content"></div>
         </div>
       </section>
     </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <p class="footer-credits">
+          Markdown rendering powered by <a href="https://github.com/markedjs/marked" target="_blank" rel="noopener noreferrer">marked.js</a>
+        </p>
+        <p class="footer-back">
+          <a href="#top" class="back-to-top">↑ Back to top</a>
+        </p>
+      </div>
+    </footer>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/2.1.3/marked.min.js"></script>
     <script src="app.js"></script>
