@@ -1,41 +1,35 @@
-// 自己紹介のコンテンツを取得
-const aboutContent = document.querySelector("#about-content");
-fetch("about.md")
-  .then((response) => response.text())
-  .then((text) => {
-    aboutContent.innerHTML = marked(text);
-  });
+// Markdownロードの共通ハンドラ
+const basePath = window.location.pathname.endsWith('/')
+  ? window.location.pathname
+  : window.location.pathname.replace(/[^/]*$/, '');
 
-// 経歴のコンテンツを取得
-const experienceContent = document.querySelector("#experience-content");
-fetch("experience.md")
-  .then((response) => response.text())
-  .then((text) => {
-    experienceContent.innerHTML = marked(text);
-  });
+const loadMarkdown = (selector, url) => {
+  const target = document.querySelector(selector);
+  if (!target) return;
 
-// 研究業績のコンテンツを取得
-const researchContent = document.querySelector("#research-content");
-fetch("research.md")
-  .then((response) => response.text())
-  .then((text) => {
-    researchContent.innerHTML = marked(text);
-  });
+  target.innerHTML = '<p style="color: var(--muted); margin: 0;">Loading...</p>';
 
-const contestContent = document.querySelector("#contest-content");
-fetch("contest.md")
-  .then((response) => response.text())
-  .then((text) => {
-    contestContent.innerHTML = marked(text);
-  });
-    
-// 受賞歴のコンテンツを取得
-const achievementContent = document.querySelector("#achievement-content");
-fetch("achievement.md")
-  .then((response) => response.text())
-  .then((text) => {
-    achievementContent.innerHTML = marked(text);
-  });
+  const resolvedUrl = `${basePath}${url}`;
+
+  fetch(resolvedUrl)
+    .then((response) => {
+      if (!response.ok) throw new Error(`${resolvedUrl} fetch failed: ${response.status}`);
+      return response.text();
+    })
+    .then((text) => {
+      target.innerHTML = marked(text);
+    })
+    .catch((err) => {
+      console.error(err);
+      target.innerHTML = '<p style="color: #ffb4a2;">コンテンツを読み込めませんでした。ファイルの配置やホスティングを確認してください。</p>';
+    });
+};
+
+loadMarkdown('#about-content', 'about.md');
+loadMarkdown('#experience-content', 'experience.md');
+loadMarkdown('#research-content', 'research.md');
+loadMarkdown('#contest-content', 'contest.md');
+loadMarkdown('#achievement-content', 'achievement.md');
 
 // スムーズスクロールの実装
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
@@ -49,3 +43,21 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         });
     });
 });
+
+// モバイルナビの開閉
+const navToggle = document.querySelector('.nav-toggle');
+const navLinks = document.querySelector('.nav-links');
+
+if (navToggle && navLinks) {
+  navToggle.addEventListener('click', () => {
+    const isOpen = navLinks.classList.toggle('open');
+    navToggle.setAttribute('aria-expanded', String(isOpen));
+  });
+
+  navLinks.querySelectorAll('a').forEach((link) => {
+    link.addEventListener('click', () => {
+      navLinks.classList.remove('open');
+      navToggle.setAttribute('aria-expanded', 'false');
+    });
+  });
+}
