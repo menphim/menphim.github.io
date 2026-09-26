@@ -4,7 +4,8 @@
 * Apr. 2018 - Now: R&D Engineer at Honda R&D Co., Ltd.
   * Mar. 2019 - Now: Robot Vision & Algorithm Engineer
   * Sep. 2018 - Mar. 2019: Data Science & Mathematical Optimization Engineer
-* Jun. 2017 - Jul. 2017: Teaching Assistant at NAIST, Sequential Data Modeling
+
+## Internships
 * Jan. 2017 - Feb. 2017: Research Intern at NTT Communication Science Laboratories
 * Aug. 2014 - Sep. 2014: Software Engineer Intern at mixi, Inc.
 
