@@ -28,7 +28,7 @@ const I18N = {
     'nav.patent': 'Patents',
     'nav.contest': 'Contests',
     'nav.achievement': 'Awards',
-    'hero.kicker': 'Robotic Vision Engineer · Honda R&amp;D',
+    'hero.kicker': 'Robotic Vision Engineer',
     'hero.title': 'Building perception<br /><span class="grad">for autonomous mobility.</span>',
     'hero.lede':
       'I build perception systems for autonomous mobility — detection, tracking and segmentation — and the MLOps / continual-learning loops that keep them improving.',
@@ -65,10 +65,10 @@ const I18N = {
     'nav.patent': '特許',
     'nav.contest': 'コンペ',
     'nav.achievement': '受賞',
-    'hero.kicker': 'ロボットビジョンエンジニア · 本田技術研究所',
+    'hero.kicker': 'ロボットビジョンエンジニア',
     'hero.title': '自律移動のための<br /><span class="grad">認識技術を<wbr />開発しています。</span>',
     'hero.lede':
-      '本田技術研究所で、自律移動ロボット・モビリティ向けの認識技術（物体検出・追跡・セグメンテーション）を研究開発しています。',
+      '自律移動ロボット・モビリティ向けの認識技術（物体検出・追跡・セグメンテーション）を研究開発しています。',
     'hero.cta': '研究を見る',
     'focus.label': 'Current focus',
     'focus.text': '認識モデルの MLOps・継続学習、視覚言語モデル',

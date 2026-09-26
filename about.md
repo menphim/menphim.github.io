@@ -1,6 +1,6 @@
 # About
 
-I'm a robotic vision engineer at Honda R&D, working on perception for autonomous mobile robots and mobility. This page summarizes my experience, publications, competition results and awards.
+I'm a robotic vision engineer working on perception for autonomous mobile robots and mobility. This page summarizes my experience, publications, competition results and awards.
 
 * Perception
   * Object detection
