@@ -1,16 +1,14 @@
 # Awards
 
 ## Research
-* SSII2023オーディエンス賞
+* SSII Audience Award (SSIIオーディエンス賞) in SSII2023, for 「深度推定を利用したセマンティックセグメンテーションにおける不確実性推定」
 
-## Algorithm
-* IBM z 13 x2 Award in ACM-ICPC 2016 Asia Tsukuba Regional
-* Director's Award in ACM-ICPC 2016 Japan Online First-Round Contest
+## Competitive Programming
+* IBM z13 x2 Award in ACM-ICPC 2016 Asia Tsukuba Regional (Team: chasen_no_sato)
+* Director's Award in ACM-ICPC 2016 Japan Online First-Round Contest (Team: chasen_no_sato)
 
-## Heuristic
-* 2nd place in RoboCup Japan Open 2014 Rescue Simulation
-* 計測自動制御学会システムインテグレーション部門賞 in RoboCup Japan Open 2014 Rescue Simulation
+## Robotics (RoboCup)
+* SICE System Integration Division Award (計測自動制御学会 システムインテグレーション部門賞) in RoboCup Japan Open 2014 Rescue Simulation (Team: Ri-one)
 
-## Hackathon
-* 奨励賞 in あいちゃれ 2014
-* 1st place in Unity-chan Game Jam 2014 @BKC
+## Software Development Contest
+* Encouragement Award (奨励賞) in あいちゃれ 2014, Student Software Creation Contest hosted by Ritsumeikan University (Team: Polo)
