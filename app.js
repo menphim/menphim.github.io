@@ -6,8 +6,108 @@
 //   - "* 項目"     : 各エントリ
 // =========================================================
 
+// 日本語版は "about.ja.md" のように ".ja.md" のファイルを読み込む（無ければ英語版を表示）。
+// =========================================================
+
 // GitHub Pages のサブパス配信にも対応するため、ページの置き場所を基準に解決する
 const baseUrl = new URL('.', window.location.href);
+
+// =========================================================
+// i18n: 画面の固定文言（Markdown 以外）
+// =========================================================
+const I18N = {
+  en: {
+    'meta.title': 'Takuma Mori — Robotic Vision Engineer',
+    'meta.description':
+      'Takuma Mori — Robotic vision engineer working on perception, MLOps and vision-language models for autonomous mobility.',
+    skip: 'Skip to main content',
+    brand: 'Takuma Mori',
+    'nav.about': 'About',
+    'nav.experience': 'Experience',
+    'nav.research': 'Research',
+    'nav.patent': 'Patents',
+    'nav.contest': 'Contests',
+    'nav.achievement': 'Awards',
+    'hero.kicker': 'Robotic Vision Engineer · Honda R&amp;D',
+    'hero.title': 'Building perception<br /><span class="grad">for autonomous mobility.</span>',
+    'hero.lede':
+      'I build perception systems for autonomous mobility — detection, tracking and segmentation — and the MLOps / continual-learning loops that keep them improving.',
+    'hero.cta': 'View research',
+    'focus.label': 'Current focus',
+    'focus.text': 'MLOps &amp; continual learning for perception in autonomous mobility, and vision-language models.',
+    'stat.research': 'Publications',
+    'stat.patent': 'Patents &amp; filings',
+    'stat.contest': 'Contests',
+    'stat.achievement': 'Awards',
+    'stat.years': 'Years in industry',
+    'sec.about': 'Profile',
+    'sec.experience': 'Work &amp; education',
+    'sec.research': 'Publications',
+    'sec.patent': 'Intellectual property',
+    'sec.contest': 'Competition results',
+    'sec.achievement': 'Awards &amp; honors',
+    'footer.top': 'Back to top ↑',
+    now: 'NOW',
+    team: 'Team',
+    loading: 'Loading…',
+    loadError: (f) => `Could not load ${f}.`,
+    fileProtocol:
+      'A local web server is required: run <code>python -m http.server 8000</code> and open http://localhost:8000.',
+  },
+  ja: {
+    'meta.title': '森 巧磨 — ロボットビジョンエンジニア',
+    'meta.description': '森 巧磨（ロボットビジョンエンジニア）。自律移動ロボット・モビリティ向けの認識技術、MLOps、視覚言語モデルを研究開発しています。',
+    skip: '本文へスキップ',
+    brand: '森 巧磨',
+    'nav.about': 'プロフィール',
+    'nav.experience': '経歴',
+    'nav.research': '研究',
+    'nav.patent': '特許',
+    'nav.contest': 'コンペ',
+    'nav.achievement': '受賞',
+    'hero.kicker': 'ロボットビジョンエンジニア · 本田技術研究所',
+    'hero.title': '自律移動のための<br /><span class="grad">認識技術を<wbr />開発しています。</span>',
+    'hero.lede':
+      '本田技術研究所で、自律移動ロボット・モビリティ向けの認識技術（物体検出・追跡・セグメンテーション）を研究開発しています。',
+    'hero.cta': '研究を見る',
+    'focus.label': 'Current focus',
+    'focus.text': '認識モデルの MLOps・継続学習、視覚言語モデル',
+    'stat.research': '論文・発表',
+    'stat.patent': '特許・出願',
+    'stat.contest': 'コンペ実績',
+    'stat.achievement': '受賞',
+    'stat.years': '実務経験（年）',
+    'sec.about': 'プロフィール',
+    'sec.experience': '職歴・学歴',
+    'sec.research': '論文・発表',
+    'sec.patent': '特許',
+    'sec.contest': 'コンペティション成績',
+    'sec.achievement': '受賞歴',
+    'footer.top': 'トップへ戻る ↑',
+    now: '現在',
+    team: 'チーム',
+    loading: '読み込み中…',
+    loadError: (f) => `${f} を読み込めませんでした。`,
+    fileProtocol:
+      'ローカルで確認するには開発サーバーが必要です: <code>python -m http.server 8000</code> を実行して http://localhost:8000 を開いてください。',
+  },
+};
+
+const LANGS = Object.keys(I18N);
+
+// URL の ?lang= → 前回の選択 → ブラウザの言語 の順で決める
+const detectLang = () => {
+  const q = new URLSearchParams(window.location.search).get('lang');
+  if (LANGS.includes(q)) return q;
+  try {
+    const saved = localStorage.getItem('lang');
+    if (LANGS.includes(saved)) return saved;
+  } catch (e) {}
+  return (navigator.language || '').toLowerCase().startsWith('ja') ? 'ja' : 'en';
+};
+
+let lang = detectLang();
+const t = (key) => I18N[lang][key] ?? I18N.en[key] ?? key;
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
@@ -63,16 +163,24 @@ const groupTitle = (title, count) => {
 const splitTitle = (text) => {
   const at = text.match(/^(.+?)\s+(at\s+.+)$/);
   if (at) return [at[1], at[2]];
-  const comma = text.match(/^(.+?),\s*(.+)$/);
+  const comma = text.match(/^(.+?)(?:,\s*|、\s*)(.+)$/);
   if (comma) return [comma[1], comma[2]];
   return [text, ''];
 };
 
-// 末尾の "(Team: xxx)" を取り出す
+// 末尾の "(Team: xxx)" / "（チーム：xxx）" を取り出す
 const splitTeam = (text) => {
-  const m = text.match(/^([\s\S]*?)\s*\(Team:\s*(.+)\)\s*$/i);
+  const m =
+    text.match(/^([\s\S]*?)\s*\(Team:\s*(.+)\)\s*$/i) || text.match(/^([\s\S]*?)\s*（チーム[:：]\s*(.+)）\s*$/);
   return m ? [m[1], m[2]] : [text, ''];
 };
+
+const teamMeta = (team) => (team ? `${t('team')} ${escapeHtml(team)}` : '');
+
+// メダル表記を CSS のクラス名にそろえる（Gold / 金 → gold）
+const MEDALS = { gold: 'gold', silver: 'silver', bronze: 'bronze', 金: 'gold', 銀: 'silver', 銅: 'bronze' };
+const medalClass = (m) => (m ? MEDALS[m.trim().toLowerCase()] || '' : '');
+const medalTag = (m) => (m ? `<span class="medal ${medalClass(m)}">${escapeHtml(m)}</span>` : '');
 
 // =========================================================
 // Renderers
@@ -112,7 +220,8 @@ const renderers = {
 
   experience(root) {
     const { intro, groups } = splitGroups(root);
-    const dateRe = /^([^:]*?\d{4}[^:]*?)\s*:\s*([\s\S]+)$/;
+    // "Apr. 2018 - Now: ..." / "2018年4月 - 現在：..."
+    const dateRe = /^([^:：]*?\d{4}[^:：]*?)\s*[:：]\s*([\s\S]+)$/;
 
     const buildTimeline = (items) => {
       const ol = el('ol', 'timeline');
@@ -132,13 +241,13 @@ const renderers = {
         const body = el('div', 'tl-body');
         if (hasLink || !m) {
           // リンク等を含む場合は元の HTML を尊重
-          const [t, s] = hasLink ? [html, ''] : splitTitle(text);
-          body.append(el('div', 'tl-title', hasLink ? t : escapeHtml(t)));
-          if (s) body.append(el('div', 'tl-sub', escapeHtml(s)));
+          const [title, sub] = hasLink ? [html, ''] : splitTitle(text);
+          body.append(el('div', 'tl-title', hasLink ? title : escapeHtml(title)));
+          if (sub) body.append(el('div', 'tl-sub', escapeHtml(sub)));
         } else {
-          const [t, s] = splitTitle(m[2].trim());
-          body.append(el('div', 'tl-title', escapeHtml(t) + (current ? '<span class="badge-now">NOW</span>' : '')));
-          if (s) body.append(el('div', 'tl-sub', escapeHtml(s)));
+          const [title, sub] = splitTitle(m[2].trim());
+          body.append(el('div', 'tl-title', escapeHtml(title) + (current ? `<span class="badge-now">${t('now')}</span>` : '')));
+          if (sub) body.append(el('div', 'tl-sub', escapeHtml(sub)));
         }
         nested.forEach((list) => body.append(buildTimeline($$(':scope > li', list))));
         item.append(body);
@@ -184,49 +293,43 @@ const renderers = {
 
   contest(root) {
     return renderCards(root, (raw, html) => {
-      // "26th place in ... (Team: xxx)" / "268th (Bronze) place in ..."
       const [text, team] = splitTeam(raw);
-      const m = text.match(/^(\d+)(?:st|nd|rd|th)\s*(?:\(([^)]+)\))?\s*place\s+in\s+([\s\S]+)$/i);
-      // "Top 10 (Gold) in ..." 形式（順位は不明だが圏内が確定しているもの）
-      const top = text.match(/^Top\s+(\d+)\s*(?:\(([^)]+)\))?\s+in\s+([\s\S]+)$/i);
+      // 英語: "26th place in ..." / "268th (Bronze) place in ..."
+      // 日本語: "26位：..." / "268位（銅）：..."
+      const m =
+        text.match(/^(\d+)(?:st|nd|rd|th)\s*(?:\(([^)]+)\))?\s*place\s+in\s+([\s\S]+)$/i) ||
+        text.match(/^(\d+)位\s*(?:（([^）]+)）)?\s*[:：]\s*([\s\S]+)$/);
+      // 順位は不明だが圏内が確定しているもの: "Top 10 (Gold) in ..." / "トップ10（金）：..."
+      const top =
+        text.match(/^Top\s+(\d+)\s*(?:\(([^)]+)\))?\s+in\s+([\s\S]+)$/i) ||
+        text.match(/^トップ\s*(\d+)\s*(?:（([^）]+)）)?\s*[:：]\s*([\s\S]+)$/);
       if (top) {
-        const medal = top[2] ? top[2].toLowerCase() : '';
-        return {
-          badge: `TOP${top[1]}`,
-          tier: medal,
-          title: escapeHtml(top[3].trim()) + (top[2] ? `<span class="medal ${medal}">${escapeHtml(top[2])}</span>` : ''),
-          meta: team ? `Team ${escapeHtml(team)}` : '',
-        };
+        return { badge: `TOP${top[1]}`, tier: medalClass(top[2]), title: escapeHtml(top[3].trim()) + medalTag(top[2]), meta: teamMeta(team) };
       }
       if (!m) {
-        // "Platform: Rating" 形式（Ratings など）。Platform 部分のリンクは残す
-        const r = html.match(/^(.+?):\s+([\s\S]+)$/);
+        // "Platform: Rating" / "Platform：Rating" 形式（Ratings など）。Platform 部分のリンクは残す
+        const r = html.match(/^(.+?)(?::\s+|：\s*)([\s\S]+)$/);
         return r ? { badge: '★', tier: '', icon: true, title: r[1], meta: r[2] } : null;
       }
       const rank = Number(m[1]);
-      const medal = m[2] ? m[2].toLowerCase() : '';
-      const tier = medal || (rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : '');
-      return {
-        badge: `#${rank}`,
-        tier,
-        title: escapeHtml(m[3].trim()) + (m[2] ? `<span class="medal ${medal}">${escapeHtml(m[2])}</span>` : ''),
-        meta: team ? `Team ${escapeHtml(team)}` : '',
-      };
+      const tier = medalClass(m[2]) || (rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : '');
+      return { badge: `#${rank}`, tier, title: escapeHtml(m[3].trim()) + medalTag(m[2]), meta: teamMeta(team) };
     });
   },
 
   achievement(root) {
     return renderCards(root, (raw) => {
       const [text, team] = splitTeam(raw);
-      const m = text.match(/^(.+?)\s+in\s+([\s\S]+)$/);
-      const place = text.match(/^(\d+)(?:st|nd|rd|th)\s+place/i);
+      // "Award in Event" / "賞名：大会名"
+      const m = text.match(/^(.+?)(?:\s+in\s+|：)([\s\S]+)$/);
+      const place = text.match(/^(\d+)(?:(?:st|nd|rd|th)\s+place|位)/i);
       const tier = place ? (['', 'gold', 'silver', 'bronze'][Number(place[1])] || '') : 'gold';
       return {
         badge: place ? `#${place[1]}` : '★',
         tier,
         icon: !place,
         title: escapeHtml(m ? m[1] : text),
-        meta: [m ? escapeHtml(m[2]) : '', team ? `Team ${escapeHtml(team)}` : ''].filter(Boolean).join(' · '),
+        meta: [m ? escapeHtml(m[2]) : '', teamMeta(team)].filter(Boolean).join(' · '),
       };
     });
   },
@@ -268,35 +371,44 @@ const renderCards = (root, parse) => {
 // =========================================================
 const counts = {};
 
+// 言語別のファイル（about.ja.md）を優先し、無ければ英語版（about.md）にフォールバック
+const fetchMarkdown = async (file) => {
+  const candidates = lang === 'en' ? [file] : [file.replace(/\.md$/, `.${lang}.md`), file];
+  for (const f of candidates) {
+    const res = await fetch(new URL(f, baseUrl), { cache: 'no-cache' });
+    if (res.ok) return res.text();
+  }
+  throw new Error(`${file}: not found`);
+};
+
 const loadSection = async (container) => {
   const file = container.dataset.md;
   const kind = container.dataset.kind;
 
   if (window.location.protocol === 'file:') {
-    container.innerHTML =
-      '<p class="md-status error">ローカルで確認するには開発サーバーが必要です: <code>python -m http.server 8000</code> を実行して http://localhost:8000 を開いてください。</p>';
+    container.innerHTML = `<p class="md-status error">${t('fileProtocol')}</p>`;
     return;
   }
 
-  container.innerHTML = '<p class="md-status">Loading…</p>';
+  container.innerHTML = `<p class="md-status">${t('loading')}</p>`;
   try {
-    const res = await fetch(new URL(file, baseUrl), { cache: 'no-cache' });
-    if (!res.ok) throw new Error(`${file}: ${res.status}`);
-    const text = await res.text();
+    const text = await fetchMarkdown(file);
 
     const root = document.createElement('div');
     root.innerHTML = window.marked.parse(text);
     const items = topItems(Array.from(root.children));
     // コンテストは順位の付いた結果だけを数える（Ratings などは除外）
     counts[container.closest('section')?.id ?? kind] =
-      kind === 'contest' ? items.filter((li) => /\bplace\b|^\s*Top\s+\d+/i.test(li.textContent)).length : items.length;
+      kind === 'contest'
+        ? items.filter((li) => /\bplace\b|^\s*Top\s+\d+|^\s*\d+位|^\s*トップ\s*\d+/i.test(li.textContent)).length
+        : items.length;
 
     const render = renderers[kind];
     const nodes = render ? render(root) : Array.from(root.children);
     container.replaceChildren(...nodes);
   } catch (err) {
     console.error(err);
-    container.innerHTML = `<p class="md-status error">${escapeHtml(file)} を読み込めませんでした。</p>`;
+    container.innerHTML = `<p class="md-status error">${I18N[lang].loadError(escapeHtml(file))}</p>`;
   }
 };
 
@@ -410,18 +522,49 @@ const setupTheme = () => {
   });
 };
 
+// 画面の固定文言・<title>・言語属性を切り替える
+const applyStaticText = () => {
+  document.documentElement.lang = lang;
+  document.title = t('meta.title');
+  $('meta[name="description"]')?.setAttribute('content', t('meta.description'));
+  $$('[data-i18n]').forEach((node) => {
+    node.innerHTML = t(node.dataset.i18n);
+  });
+};
+
+const loadAll = async () => {
+  Object.keys(counts).forEach((k) => delete counts[k]);
+  await Promise.all($$('.md[data-md]').map(loadSection));
+  fillStats();
+  setupReveal();
+  updateNav();
+};
+
+const setLang = async (next) => {
+  if (next === lang) return;
+  lang = next;
+  try {
+    localStorage.setItem('lang', lang);
+  } catch (e) {}
+  const url = new URL(window.location.href);
+  url.searchParams.set('lang', lang);
+  history.replaceState(null, '', url);
+  applyStaticText();
+  await loadAll();
+};
+
 // =========================================================
 // Boot
 // =========================================================
 $('#year').textContent = new Date().getFullYear();
+applyStaticText();
 setupTheme();
 const updateNav = setupNav();
 setupReveal();
 
-Promise.all($$('.md[data-md]').map(loadSection)).then(() => {
-  fillStats();
-  setupReveal();
-  updateNav();
+$('.lang-toggle').addEventListener('click', () => setLang(lang === 'en' ? 'ja' : 'en'));
+
+loadAll().then(() => {
   // ハッシュ付きURLで来た場合、コンテンツ読み込み後に位置を合わせ直す
   try {
     if (window.location.hash) $(decodeURIComponent(window.location.hash))?.scrollIntoView();

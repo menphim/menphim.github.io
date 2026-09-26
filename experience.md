@@ -8,10 +8,6 @@
 * Jan. 2017 - Feb. 2017: Research Intern at NTT Communication Science Laboratories
 * Aug. 2014 - Sep. 2014: Software Engineer Intern at mixi, Inc.
 
-## Research Projects
-* Aug. 2016 - Mar. 2017: Competitive Research Funding (CICP2016), "Are You a Werewolf?: Creation of a High Context Multimodal Corpus of Werewolf Games"
-* Apr. 2015 - Mar. 2016: Collaborative Research, DENSO CORPORATION
-
 ## Education
 * Apr. 2016 - Mar. 2018: Master of Engineering, Augmented Human Communication Laboratory, Graduate School of Information Science, Nara Institute of Science and Technology
 * Apr. 2012 - Mar. 2016: Bachelor of Engineering, Emergent System Laboratory, Department of Human and Computer Intelligence, Ritsumeikan University

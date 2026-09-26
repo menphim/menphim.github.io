@@ -31,8 +31,8 @@
 * 8th place in RoboCup 2014 João Pessoa, Brazil — Rescue Simulation League Agent Competition (Team: Ri-one)
 * 2nd place in RoboCup Japan Open 2014 Rescue Simulation (Team: Ri-one)
 
-## Game Jam
+## Hackathon
 * 1st place in Unity-chan Game Jam 2014 @BKC (Team: Kaseijin Team)
 
-## Other
+## Human-Powered Aircraft
 * 8th place in Japan International Birdman Rally 2013 (鳥人間コンテスト), Human-Powered Propeller Aircraft Distance Division (Team: Rapt)

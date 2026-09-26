@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,6 +9,9 @@
     <meta property="og:description" content="Perception, MLOps and vision-language models for autonomous mobility." />
     <meta property="og:image" content="img/me.jpg" />
     <meta name="theme-color" content="#07090d" />
+    <link rel="alternate" hreflang="en" href="https://menphim.github.io/?lang=en" />
+    <link rel="alternate" hreflang="ja" href="https://menphim.github.io/?lang=ja" />
+    <link rel="alternate" hreflang="x-default" href="https://menphim.github.io/" />
     <link rel="shortcut icon" href="favicon.ico" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -26,7 +29,7 @@
     </script>
   </head>
   <body>
-    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <a href="#main-content" class="skip-link" data-i18n="skip">Skip to main content</a>
     <div class="bg-grid" aria-hidden="true"></div>
     <div class="bg-glow" aria-hidden="true"></div>
 
@@ -34,17 +37,20 @@
       <div class="container nav-bar">
         <a class="brand" href="#top" aria-label="Takuma Mori — top">
           <span class="brand-mark">TM</span>
-          <span class="brand-name">Takuma Mori</span>
+          <span class="brand-name" data-i18n="brand">Takuma Mori</span>
         </a>
         <nav class="nav-links" aria-label="Sections">
-          <a href="#about">About</a>
-          <a href="#experience">Experience</a>
-          <a href="#research">Research</a>
-          <a href="#patent">Patents</a>
-          <a href="#contest">Contests</a>
-          <a href="#achievement">Awards</a>
+          <a href="#about" data-i18n="nav.about">About</a>
+          <a href="#experience" data-i18n="nav.experience">Experience</a>
+          <a href="#research" data-i18n="nav.research">Research</a>
+          <a href="#patent" data-i18n="nav.patent">Patents</a>
+          <a href="#contest" data-i18n="nav.contest">Contests</a>
+          <a href="#achievement" data-i18n="nav.achievement">Awards</a>
         </nav>
         <div class="nav-actions">
+          <button class="lang-toggle" type="button" aria-label="Switch language / 言語を切り替え">
+            <span data-lang="en">EN</span><span data-lang="ja">JA</span>
+          </button>
           <button class="icon-btn theme-toggle" type="button" aria-label="Toggle color theme">
             <svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
             <svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
@@ -61,18 +67,18 @@
       <section class="hero" id="top">
         <div class="container hero-grid">
           <div class="hero-copy">
-            <p class="kicker"><span class="dot"></span>Robotic Vision Engineer · Honda R&amp;D</p>
-            <h1 class="hero-title">
-              Teaching machines<br />
-              <span class="grad">to see the road.</span>
+            <p class="kicker"><span class="dot"></span><span data-i18n="hero.kicker">Robotic Vision Engineer · Honda R&amp;D</span></p>
+            <h1 class="hero-title" data-i18n="hero.title">
+              Building perception<br />
+              <span class="grad">for autonomous mobility.</span>
             </h1>
-            <p class="hero-lede">
+            <p class="hero-lede" data-i18n="hero.lede">
               I build perception systems for autonomous mobility — detection, tracking and segmentation —
               and the MLOps / continual-learning loops that keep them improving.
             </p>
             <div class="hero-actions">
               <a class="btn primary" href="#research">
-                View research
+                <span data-i18n="hero.cta">View research</span>
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
               </a>
               <a class="btn ghost" href="https://github.com/menphim" target="_blank" rel="noopener noreferrer">
@@ -96,8 +102,8 @@
               <span class="scanline" aria-hidden="true"></span>
             </div>
             <figcaption class="focus-card">
-              <p class="label">Current focus</p>
-              <p class="focus-text">MLOps &amp; continual learning for perception in autonomous mobility, and vision-language models.</p>
+              <p class="label" data-i18n="focus.label">Current focus</p>
+              <p class="focus-text" data-i18n="focus.text">MLOps &amp; continual learning for perception in autonomous mobility, and vision-language models.</p>
             </figcaption>
           </figure>
         </div>
@@ -105,11 +111,11 @@
         <!-- Markdown から自動集計される数値 -->
         <div class="container">
           <dl class="stats" aria-label="Highlights">
-            <div class="stat"><dt>Publications</dt><dd data-count="research">–</dd></div>
-            <div class="stat"><dt>Patents &amp; filings</dt><dd data-count="patent">–</dd></div>
-            <div class="stat"><dt>Contests</dt><dd data-count="contest">–</dd></div>
-            <div class="stat"><dt>Awards</dt><dd data-count="achievement">–</dd></div>
-            <div class="stat"><dt>Years in industry</dt><dd data-years-since="2018">–</dd></div>
+            <div class="stat"><dt data-i18n="stat.research">Publications</dt><dd data-count="research">–</dd></div>
+            <div class="stat"><dt data-i18n="stat.patent">Patents &amp; filings</dt><dd data-count="patent">–</dd></div>
+            <div class="stat"><dt data-i18n="stat.contest">Contests</dt><dd data-count="contest">–</dd></div>
+            <div class="stat"><dt data-i18n="stat.achievement">Awards</dt><dd data-count="achievement">–</dd></div>
+            <div class="stat"><dt data-i18n="stat.years">Years in industry</dt><dd data-years-since="2018">–</dd></div>
           </dl>
         </div>
       </section>
@@ -121,7 +127,7 @@
             <span class="section-index">01</span>
             <div>
               <p class="label">About</p>
-              <h2>Profile</h2>
+              <h2 data-i18n="sec.about">Profile</h2>
             </div>
           </header>
           <div class="md" data-md="about.md" data-kind="about"></div>
@@ -134,7 +140,7 @@
             <span class="section-index">02</span>
             <div>
               <p class="label">Experience</p>
-              <h2>Work &amp; education</h2>
+              <h2 data-i18n="sec.experience">Work &amp; education</h2>
             </div>
           </header>
           <div class="md" data-md="experience.md" data-kind="experience"></div>
@@ -147,7 +153,7 @@
             <span class="section-index">03</span>
             <div>
               <p class="label">Research</p>
-              <h2>Publications</h2>
+              <h2 data-i18n="sec.research">Publications</h2>
             </div>
           </header>
           <div class="md" data-md="research.md" data-kind="research"></div>
@@ -160,7 +166,7 @@
             <span class="section-index">04</span>
             <div>
               <p class="label">Patents</p>
-              <h2>Intellectual property</h2>
+              <h2 data-i18n="sec.patent">Intellectual property</h2>
             </div>
           </header>
           <div class="md" data-md="patent.md" data-kind="research"></div>
@@ -173,7 +179,7 @@
             <span class="section-index">05</span>
             <div>
               <p class="label">Contests</p>
-              <h2>Competition results</h2>
+              <h2 data-i18n="sec.contest">Competition results</h2>
             </div>
           </header>
           <div class="md" data-md="contest.md" data-kind="contest"></div>
@@ -186,7 +192,7 @@
             <span class="section-index">06</span>
             <div>
               <p class="label">Awards</p>
-              <h2>Awards &amp; honors</h2>
+              <h2 data-i18n="sec.achievement">Awards &amp; honors</h2>
             </div>
           </header>
           <div class="md" data-md="achievement.md" data-kind="achievement"></div>
@@ -196,8 +202,8 @@
 
     <footer class="site-footer">
       <div class="container footer-inner">
-        <p>© <span id="year"></span> Takuma Mori</p>
-        <a href="#top" class="back-to-top">Back to top ↑</a>
+        <p>© <span id="year"></span> <span data-i18n="brand">Takuma Mori</span></p>
+        <a href="#top" class="back-to-top" data-i18n="footer.top">Back to top ↑</a>
       </div>
     </footer>
 
