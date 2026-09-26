@@ -7,7 +7,13 @@ I'm a robotic vision engineer working on perception for autonomous mobile robots
   * Multi-object tracking
   * Segmentation
 * Navigation
+  * Path planning
+  * Obstacle avoidance
 * MLOps
   * Continual learning
   * Model compression
 * Vision-language models
+  * Scene understanding
+  * Action recognition
+  * Auto-annotation
+  * VLA (vision-language-action)
