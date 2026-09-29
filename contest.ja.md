@@ -6,7 +6,7 @@
 * SIGNATE：Expert（最高順位 303）
 
 ## データサイエンス
-* トップ10（金）：Nishika 『話者分離AIコンペ』声のカオスを断ち切れ！D-1グランプリ（2025）
+* 9位（金）：Nishika 『話者分離AIコンペ』声のカオスを断ち切れ！D-1グランプリ（2025）
 * 268位（銅）：Kaggle TalkingData AdTracking Fraud Detection Challenge（2018、3,943チーム）
 * 38位（銀）：SIGNATE 大手ヘッジファンドX: 金融モデリングチャレンジ（2018、276チーム）
 * 32位（銅）：SIGNATE The 3rd Big Data Analysis Contest 予測部門（2017、129チーム）
