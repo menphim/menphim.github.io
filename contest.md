@@ -6,6 +6,7 @@
 * SIGNATE: Expert (best rank 303)
 
 ## Data Science
+* 334th (Bronze) place in Kaggle Biohub - Cell Tracking During Development (2026, 3,947 teams)
 * 9th (Gold) place in Nishika 『話者分離AIコンペ』声のカオスを断ち切れ！D-1グランプリ (2025)
 * 268th (Bronze) place in Kaggle TalkingData AdTracking Fraud Detection Challenge (2018, 3,943 teams)
 * 38th (Silver) place in SIGNATE 大手ヘッジファンドX: 金融モデリングチャレンジ (2018, 276 teams)
