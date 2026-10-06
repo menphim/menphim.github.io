@@ -8,6 +8,7 @@
   * Title
     * Oct. 2026 - Now: Assistant Chief Engineer
     * Oct. 2021 - Sep. 2026: Staff Engineer
+    * Apr. 2018 - Sep. 2021: Engineer
 
 ## Internships
 * Jan. 2017 - Feb. 2017: Research Intern at NTT Communication Science Laboratories
