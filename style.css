@@ -974,7 +974,8 @@ a {
   background: color-mix(in srgb, var(--accent-2) 10%, transparent);
 }
 
-.tl-body > .timeline {
+.tl-body > .timeline,
+.tl-box {
   margin-top: 16px;
   padding: 16px 16px 16px 0;
   border: 1px solid var(--border);
@@ -982,22 +983,36 @@ a {
   background: var(--surface);
 }
 
-.tl-body > .timeline .tl-item {
+.tl-body .timeline .tl-item {
   grid-template-columns: 172px 22px minmax(0, 1fr);
   gap: 0 12px;
   padding-bottom: 14px;
 }
 
-.tl-body > .timeline .tl-date {
+.tl-body .timeline .tl-date {
   font-size: 0.74rem;
 }
 
-.tl-body > .timeline .tl-item:last-child {
+.tl-body .timeline .tl-item:last-child {
   padding-bottom: 0;
 }
 
-.tl-body > .timeline .tl-title {
+.tl-body .timeline .tl-title {
   font-size: 0.95rem;
+}
+
+.tl-box + .tl-box {
+  margin-top: 10px;
+}
+
+.tl-sub-label {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  padding-left: 16px;
+  margin-bottom: 12px;
 }
 
 /* ---------- Research ---------- */
@@ -1324,7 +1339,7 @@ a {
 
   /* タイムライン: 日付を本文の上に */
   .tl-item,
-  .tl-body > .timeline .tl-item {
+  .tl-body .timeline .tl-item {
     grid-template-columns: 14px minmax(0, 1fr);
     gap: 0 14px;
   }
@@ -1350,8 +1365,13 @@ a {
     margin-top: 5px;
   }
 
-  .tl-body > .timeline {
+  .tl-body > .timeline,
+  .tl-box {
     padding: 14px;
+  }
+
+  .tl-sub-label {
+    padding-left: 0;
   }
 
   .pub {

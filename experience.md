@@ -2,8 +2,12 @@
 
 ## Work
 * Apr. 2018 - Now: R&D Engineer at Honda R&D Co., Ltd.
-  * Mar. 2019 - Now: Robot Vision & Algorithm Engineer
-  * Sep. 2018 - Mar. 2019: Data Science & Mathematical Optimization Engineer
+  * Role
+    * Mar. 2019 - Now: Robot Vision & Algorithm Engineer
+    * Sep. 2018 - Mar. 2019: Data Science & Mathematical Optimization Engineer
+  * Title
+    * Oct. 2026 - Now: Assistant Chief Engineer
+    * Oct. 2021 - Sep. 2026: Staff Engineer
 
 ## Internships
 * Jan. 2017 - Feb. 2017: Research Intern at NTT Communication Science Laboratories

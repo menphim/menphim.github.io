@@ -223,6 +223,29 @@ const renderers = {
     // "Apr. 2018 - Now: ..." / "2018年4月 - 現在：..."
     const dateRe = /^([^:：]*?\d{4}[^:：]*?)\s*[:：]\s*([\s\S]+)$/;
 
+    // 入れ子のリスト: 日付のない見出し行（"Role" / "職種" など）の下に項目がある場合は、
+    // 見出しごとにラベル付きの枠にする。それ以外は通常の入れ子タイムライン。
+    const renderNested = (body, list) => {
+      const lis = $$(':scope > li', list);
+      const labeled =
+        lis.length > 0 &&
+        lis.every((li) => {
+          const { text, nested } = splitLi(li);
+          return !dateRe.test(text) && nested.length > 0;
+        });
+      if (!labeled) {
+        body.append(buildTimeline(lis));
+        return;
+      }
+      lis.forEach((li) => {
+        const { html, nested } = splitLi(li);
+        const box = el('div', 'tl-box');
+        box.append(el('div', 'tl-sub-label', html));
+        nested.forEach((n) => box.append(buildTimeline($$(':scope > li', n))));
+        body.append(box);
+      });
+    };
+
     const buildTimeline = (items) => {
       const ol = el('ol', 'timeline');
       items.forEach((li) => {
@@ -249,7 +272,7 @@ const renderers = {
           body.append(el('div', 'tl-title', escapeHtml(title) + (current ? `<span class="badge-now">${t('now')}</span>` : '')));
           if (sub) body.append(el('div', 'tl-sub', escapeHtml(sub)));
         }
-        nested.forEach((list) => body.append(buildTimeline($$(':scope > li', list))));
+        nested.forEach((list) => renderNested(body, list));
         item.append(body);
         ol.append(item);
       });
