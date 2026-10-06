@@ -65,6 +65,7 @@
     <main id="main-content">
       <!-- ========== HERO ========== -->
       <section class="hero" id="top">
+        <canvas class="lidar" aria-hidden="true"></canvas>
         <div class="container hero-grid">
           <div class="hero-copy">
             <p class="kicker"><span class="dot"></span><span data-i18n="hero.kicker">Robotic Vision Engineer</span></p>
@@ -89,8 +90,8 @@
 
           <figure class="hero-visual" aria-label="Portrait">
             <div class="hud-bar" aria-hidden="true">
-              <span><i class="rec"></i>CAM_FRONT</span>
-              <span>30 FPS</span>
+              <span><i class="rec"></i><span class="hud-src">CAM_FRONT</span></span>
+              <span class="hud-fps">30 FPS</span>
             </div>
             <div class="detect">
               <img src="img/me.jpg" alt="Takuma Mori" class="detect-img" />
@@ -98,8 +99,19 @@
                 <span class="bbox-label">person <b>0.99</b></span>
                 <i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i>
               </span>
+              <video class="detect-video" playsinline muted hidden></video>
+              <canvas class="detect-overlay" aria-hidden="true"></canvas>
               <span class="scanline" aria-hidden="true"></span>
             </div>
+            <div class="detect-controls">
+              <button type="button" class="chip-btn" id="fx-run" data-i18n="fx.run">▶ Try object detection on this photo</button>
+              <button type="button" class="chip-btn" id="fx-camera" data-i18n="fx.camera" hidden>Try with camera</button>
+              <button type="button" class="chip-btn" id="fx-stop" data-i18n="fx.stop" hidden>Stop camera</button>
+              <button type="button" class="chip-btn" id="fx-end" data-i18n="fx.end" hidden>End detection</button>
+              <span class="fx-status" id="fx-status" aria-live="polite"></span>
+            </div>
+            <p class="fx-privacy" id="fx-hint" data-i18n="fx.hint"></p>
+            <p class="fx-privacy" id="fx-privacy" data-i18n="fx.privacy" hidden></p>
             <figcaption class="focus-card">
               <p class="label" data-i18n="focus.label">Current focus</p>
               <p class="focus-text" data-i18n="focus.text">MLOps &amp; continual learning for perception in autonomous mobility, and vision-language models.</p>
@@ -208,5 +220,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
     <script src="app.js"></script>
+    <script type="module" src="hero-fx.js"></script>
   </body>
 </html>
