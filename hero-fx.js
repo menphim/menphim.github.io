@@ -111,7 +111,8 @@ const setupDetection = () => {
     }
     const t0 = performance.now();
     const res = detector.detect(img);
-    hudFps.textContent = `${Math.round(performance.now() - t0)} ms`;
+    // 単位をカメラ使用時と揃え、1 回の推論時間を FPS に換算して表示する
+    hudFps.textContent = `${(1000 / Math.max(1, performance.now() - t0)).toFixed(1)} FPS`;
     draw(res.detections, img, false);
   };
 
