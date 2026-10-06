@@ -8,6 +8,7 @@
 ## Data Science
 * 334th (Bronze) place in Kaggle Biohub - Cell Tracking During Development (2026, 3,947 teams)
 * 9th (Gold) place in Nishika 『話者分離AIコンペ』声のカオスを断ち切れ！D-1グランプリ (2025)
+* 7th place in SIGNATE Sony Group Joint Data Analysis Competition, Dice Image Classification (2023)
 * 268th (Bronze) place in Kaggle TalkingData AdTracking Fraud Detection Challenge (2018, 3,943 teams)
 * 38th (Silver) place in SIGNATE 大手ヘッジファンドX: 金融モデリングチャレンジ (2018, 276 teams)
 * 32nd (Bronze) place in SIGNATE The 3rd Big Data Analysis Contest, Prediction Division (2017, 129 teams)
