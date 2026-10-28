@@ -6,6 +6,7 @@
 * SIGNATE：Expert（最高順位 303）
 
 ## データサイエンス
+* 70位（銀）：Kaggle RSNA Knee Abnormality Detection（2026、6,299チーム）
 * 334位（銅）：Kaggle Biohub - Cell Tracking During Development（2026、3,947チーム）
 * 9位（金）：Nishika 『話者分離AIコンペ』声のカオスを断ち切れ！D-1グランプリ（2025）
 * 7位：SIGNATE ソニーグループ合同 データ分析コンペティション（サイコロ画像の分類）（2023）
