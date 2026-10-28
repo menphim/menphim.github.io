@@ -1271,6 +1271,29 @@ a {
   min-width: 0;
 }
 
+.result-body .result-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  padding: 1px 8px;
+  margin-left: 4px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  vertical-align: 1px;
+  white-space: nowrap;
+}
+
+.result-body .result-link:hover {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.result-body .result-link::after {
+  content: '↗';
+}
+
 .result-body .meta {
   display: block;
   color: var(--muted);

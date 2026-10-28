@@ -6,7 +6,7 @@
 * SIGNATE: Expert (best rank 303)
 
 ## Data Science
-* 70th (Silver) place in Kaggle RSNA Knee Abnormality Detection (2026, 6,299 teams)
+* 70th (Silver) place in Kaggle RSNA Knee Abnormality Detection (2026, 6,299 teams) [Write-up](https://www.kaggle.com/competitions/rsna-knee-abnormality-detection/writeups/72nd-place-training-only-site-bias-and-image-read)
 * 334th (Bronze) place in Kaggle Biohub - Cell Tracking During Development (2026, 3,947 teams)
 * 9th (Gold) place in Nishika 『話者分離AIコンペ』声のカオスを断ち切れ！D-1グランプリ (2025)
 * 7th place in SIGNATE Sony Group Joint Data Analysis Competition, Dice Image Classification (2023)

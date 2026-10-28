@@ -394,12 +394,25 @@ const renderCards = (root, parse) => {
 
     const ul = el('ul', 'results');
     items.forEach((li) => {
-      const { html, text } = splitLi(li);
-      const hasLink = /<a\s/i.test(html);
-      const r = parse(text, html);
+      const { html } = splitLi(li);
+      // 行末のリンク（Write-up など）は本文から外し、小さなボタンとして添える
+      const tmp = el('div', '', html);
+      const links = [];
+      while (tmp.lastChild && (tmp.lastChild.nodeName === 'A' || !tmp.lastChild.textContent.trim())) {
+        const node = tmp.lastChild;
+        if (node.nodeName === 'A') links.unshift(node);
+        node.remove();
+      }
+      const r = parse(tmp.textContent.trim(), tmp.innerHTML.trim());
       const row = el('li', 'result');
       row.append(el('span', `rank ${r ? r.tier : ''}${!r || r.icon ? ' icon' : ''}`, r ? r.badge : '•'));
-      const body = el('div', 'result-body', r ? r.title : html);
+      const body = el('div', 'result-body', r ? r.title : tmp.innerHTML);
+      links.forEach((a) => {
+        a.className = 'result-link';
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        body.append(' ', a);
+      });
       if (r && r.meta) body.append(el('span', 'meta', r.meta));
       row.append(body);
       ul.append(row);
