@@ -29,7 +29,7 @@ const I18N = {
     'nav.contest': 'Contests',
     'nav.achievement': 'Awards',
     'hero.kicker': 'Robotic Vision Engineer',
-    'hero.title': 'Perception for<br /><span class="grad">autonomous mobility.</span>',
+    'hero.title': 'Perception for<br /><span class="hl">autonomous mobility.</span>',
     'hero.lede':
       'I research and develop perception models — object detection, multi-object tracking and segmentation — and the MLOps pipelines that keep improving them.',
     'hero.cta': 'View research',
@@ -60,6 +60,13 @@ const I18N = {
     'fx.noCamera': 'Camera unavailable',
     'fx.error': 'Could not load the model',
     team: 'Team',
+    top: (p) => `Top ${p}%`,
+    'of.teams': (n) => `of ${n} teams`,
+    'of.participants': (n) => `of ${n} participants`,
+    'medal.gold': 'Gold',
+    'medal.silver': 'Silver',
+    'medal.bronze': 'Bronze',
+    'strip.label': 'Items per year',
     loading: 'Loading…',
     loadError: (f) => `Could not load ${f}.`,
     fileProtocol:
@@ -77,7 +84,7 @@ const I18N = {
     'nav.contest': 'コンペ',
     'nav.achievement': '受賞',
     'hero.kicker': 'ロボットビジョンエンジニア',
-    'hero.title': '自律移動ロボット・<wbr />モビリティの<br /><span class="grad">認識技術</span>',
+    'hero.title': '自律移動ロボット・<wbr />モビリティの<br /><span class="hl">認識技術</span>',
     'hero.lede':
       '物体検出・複数物体追跡・セグメンテーションなどの認識モデルと、それを継続的に改善する仕組み（MLOps）を研究開発しています。',
     'hero.cta': '研究を見る',
@@ -107,6 +114,13 @@ const I18N = {
     'fx.noCamera': 'カメラを使えませんでした',
     'fx.error': 'モデルを読み込めませんでした',
     team: 'チーム',
+    top: (p) => `上位 ${p}%`,
+    'of.teams': (n) => `${n}チーム中`,
+    'of.participants': (n) => `${n}名中`,
+    'medal.gold': '金',
+    'medal.silver': '銀',
+    'medal.bronze': '銅',
+    'strip.label': '年別の件数',
     loading: '読み込み中…',
     loadError: (f) => `${f} を読み込めませんでした。`,
     fileProtocol:
@@ -203,16 +217,80 @@ const MEDALS = { gold: 'gold', silver: 'silver', bronze: 'bronze', 金: 'gold', 
 const medalClass = (m) => (m ? MEDALS[m.trim().toLowerCase()] || '' : '');
 const medalTag = (m) => (m ? `<span class="medal ${medalClass(m)}">${escapeHtml(m)}</span>` : '');
 
+const YEAR_RE = /(?<!\d)(?:19|20)\d{2}(?!\d)/g;
+const fmtNum = (n) => n.toLocaleString('en-US');
+
+// 行末のリンク（DOI・Write-up など）と太字（受賞など）を本文から取り外す
+const popTrailing = (node) => {
+  const links = [];
+  const notes = [];
+  while (node.lastChild) {
+    const n = node.lastChild;
+    if (n.nodeType === 3 && !n.textContent.trim()) n.remove();
+    else if (n.nodeName === 'A') {
+      links.unshift(n);
+      n.remove();
+    } else if (n.nodeName === 'STRONG') {
+      notes.unshift(n.textContent.trim());
+      n.remove();
+    } else break;
+  }
+  links.forEach((a) => {
+    a.className = 'chip-link';
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+  });
+  return { links, notes };
+};
+
+// タグの外にある区切り文字で分割する（最大 max 回）
+const splitOutsideTags = (html, sep, max) => {
+  const parts = [];
+  let inTag = false;
+  let start = 0;
+  for (let i = 0; i < html.length && parts.length < max; i++) {
+    const ch = html[i];
+    if (ch === '<') inTag = true;
+    else if (ch === '>') inTag = false;
+    else if (!inTag && html.startsWith(sep, i)) {
+      parts.push(html.slice(start, i));
+      start = i + sep.length;
+      i = start - 1;
+    }
+  }
+  parts.push(html.slice(start));
+  return parts;
+};
+
+// セクション左の欄に、グループへの目次（件数つき）を入れる
+const fillRail = (rail, groups, extra) => {
+  if (!rail) return;
+  rail.replaceChildren();
+  if (extra) rail.append(extra);
+  if (groups.length < 2) return;
+  const ul = el('ul', 'rail-nav');
+  groups.forEach((g) => {
+    const li = el('li');
+    const a = el('a');
+    a.href = `#${g.id}`;
+    a.append(el('span', '', escapeHtml(g.title)), el('i', '', String(g.count).padStart(2, '0')));
+    li.append(a);
+    ul.append(li);
+  });
+  rail.append(ul);
+};
+
 // =========================================================
 // Renderers
+//   render(root, ctx) : ctx = { sid: セクションの id, rail: 左欄の要素 }
 // =========================================================
 const renderers = {
+  // プロフィール: 文章 + 専門分野（入れ子のリスト）を仕様表のような列にする
   about(root) {
     const { intro, groups } = splitGroups(root);
     const all = intro.concat(...groups.map((g) => g.nodes));
-    const layout = el('div', 'about-layout');
     const prose = el('div', 'about-prose');
-    const grid = el('div', 'focus-grid');
+    const spec = el('div', 'spec');
 
     all.forEach((node) => {
       const isFocusList =
@@ -221,25 +299,27 @@ const renderers = {
         prose.append(node);
         return;
       }
-      Array.from(node.children).forEach((li) => {
+      Array.from(node.children).forEach((li, i) => {
         const { html, nested } = splitLi(li);
-        const card = el('div', 'card focus-item reveal');
-        card.append(el('h3', '', html));
+        const col = el('div', 'spec-col reveal');
+        col.style.setProperty('--d', `${i * 0.06}s`);
+        col.append(el('span', 'spec-no', String(i + 1).padStart(2, '0')));
+        col.append(el('h3', '', html));
         if (nested.length) {
-          const chips = el('ul', 'chips');
-          nested.forEach((list) => $$(':scope > li', list).forEach((c) => chips.append(el('li', '', c.innerHTML))));
-          card.append(chips);
+          const ul = el('ul');
+          nested.forEach((list) => $$(':scope > li', list).forEach((c) => ul.append(el('li', '', c.innerHTML))));
+          col.append(ul);
         }
-        grid.append(card);
+        spec.append(col);
       });
     });
 
-    layout.append(prose);
-    if (grid.children.length) layout.append(grid);
-    return [layout];
+    const out = [prose];
+    if (spec.children.length) out.push(spec);
+    return out;
   },
 
-  experience(root) {
+  experience(root, ctx) {
     const { intro, groups } = splitGroups(root);
     // "Apr. 2018 - Now: ..." / "2018年4月 - 現在：..."
     const dateRe = /^([^:：]*?\d{4}[^:：]*?)\s*[:：]\s*([\s\S]+)$/;
@@ -255,20 +335,22 @@ const renderers = {
           return !dateRe.test(text) && nested.length > 0;
         });
       if (!labeled) {
-        body.append(buildTimeline(lis));
+        body.append(buildTimeline(lis, true));
         return;
       }
+      const boxes = el('div', 'tl-boxes');
       lis.forEach((li) => {
         const { html, nested } = splitLi(li);
         const box = el('div', 'tl-box');
         box.append(el('div', 'tl-sub-label', html));
-        nested.forEach((n) => box.append(buildTimeline($$(':scope > li', n))));
-        body.append(box);
+        nested.forEach((n) => box.append(buildTimeline($$(':scope > li', n), true)));
+        boxes.append(box);
       });
+      body.append(boxes);
     };
 
-    const buildTimeline = (items) => {
-      const ol = el('ol', 'timeline');
+    const buildTimeline = (items, sub) => {
+      const ol = el('ol', `timeline${sub ? ' sub' : ''}`);
       items.forEach((li) => {
         const { html, text, nested } = splitLi(li);
         const m = text.match(dateRe);
@@ -276,22 +358,19 @@ const renderers = {
         const hasLink = /<a\s/i.test(html);
         const current = /\b(now|present)\b|現在/i.test(date);
 
-        const item = el('li', `tl-item${current ? ' current' : ''}`);
+        const item = el('li', `tl-item${current ? ' current' : ''}${sub ? '' : ' reveal'}`);
         item.append(el('div', 'tl-date', escapeHtml(date)));
-        const rail = el('div', 'tl-rail');
-        rail.append(el('span', 'tl-node'));
-        item.append(rail);
 
         const body = el('div', 'tl-body');
         if (hasLink || !m) {
           // リンク等を含む場合は元の HTML を尊重
-          const [title, sub] = hasLink ? [html, ''] : splitTitle(text);
+          const [title, rest] = hasLink ? [html, ''] : splitTitle(text);
           body.append(el('div', 'tl-title', hasLink ? title : escapeHtml(title)));
-          if (sub) body.append(el('div', 'tl-sub', escapeHtml(sub)));
+          if (rest) body.append(el('div', 'tl-sub', escapeHtml(rest)));
         } else {
-          const [title, sub] = splitTitle(m[2].trim());
+          const [title, rest] = splitTitle(m[2].trim());
           body.append(el('div', 'tl-title', escapeHtml(title) + (current ? `<span class="badge-now">${t('now')}</span>` : '')));
-          if (sub) body.append(el('div', 'tl-sub', escapeHtml(sub)));
+          if (rest) body.append(el('div', 'tl-sub', escapeHtml(rest)));
         }
         nested.forEach((list) => renderNested(body, list));
         item.append(body);
@@ -301,126 +380,319 @@ const renderers = {
     };
 
     const out = intro.map((n) => n);
-    groups.forEach((g) => {
-      const wrap = el('div', 'group reveal');
-      wrap.append(groupTitle(g.title));
+    const nav = [];
+    groups.forEach((g, gi) => {
+      const wrap = el('div', 'group');
+      wrap.id = `${ctx.sid}-g${gi}`;
       const items = topItems(g.nodes);
+      wrap.append(groupTitle(g.title, items.length));
       g.nodes.filter((n) => !['UL', 'OL'].includes(n.tagName)).forEach((n) => wrap.append(n));
-      if (items.length) wrap.append(buildTimeline(items));
+      if (items.length) wrap.append(buildTimeline(items, false));
       out.push(wrap);
+      nav.push({ id: wrap.id, title: g.title, count: items.length });
     });
+    fillRail(ctx.rail, nav);
     return out;
   },
 
-  research(root) {
+  // 論文・発表: "著者. タイトル. 掲載先." の形の行を、タイトルを先頭にして並べる
+  research(root, ctx, strip = true) {
     const { intro, groups } = splitGroups(root);
     const out = groups.length ? [...intro] : [];
     const list = groups.length ? groups : [{ title: '', nodes: intro }];
-    list.forEach((g) => {
+    const entries = [];
+    const nav = [];
+
+    list.forEach((g, gi) => {
       const items = topItems(g.nodes);
       const wrap = el('div', 'group');
+      wrap.id = `${ctx.sid}-g${gi}`;
       if (g.title) wrap.append(groupTitle(g.title, items.length));
       const ul = el('ul', 'pubs');
-      items.forEach((li, i) => {
-        const years = li.textContent.match(/(?<!\d)(?:19|20)\d{2}(?!\d)/g);
-        const card = el('li', 'card pub reveal');
-        card.style.setProperty('--d', `${Math.min(i, 6) * 0.04}s`);
-        card.append(el('div', 'pub-year', years ? years[years.length - 1] : ''));
-        card.append(el('div', 'pub-body', li.innerHTML));
-        ul.append(card);
+      items.forEach((li) => {
+        const years = li.textContent.match(YEAR_RE);
+        const year = years ? years[years.length - 1] : '';
+        const prev = entries[entries.length - 1];
+        const rep = prev && prev.gi === gi && String(prev.year) === year;
+        const row = el('li', `pub brk reveal${rep ? ' rep' : ''}`);
+        row.id = `${ctx.sid}-p${entries.length}`;
+        row.append(el('div', 'pub-year', year));
+
+        const tmp = li.cloneNode(true);
+        const { links, notes } = popTrailing(tmp);
+        const parts = splitOutsideTags(tmp.innerHTML.trim(), '. ', 2);
+        const body = el('div', 'pub-body');
+        let title = tmp.textContent.trim();
+        if (parts.length === 3 && parts[1].trim()) {
+          const h = el('p', 'pub-title', parts[1]);
+          title = h.textContent;
+          notes.forEach((n) => h.append(' ', el('span', 'award', escapeHtml(n))));
+          body.append(h, el('p', 'pub-authors', parts[0]));
+          const venue = el('p', 'pub-venue', parts[2]);
+          links.forEach((a) => venue.append(' ', a));
+          body.append(venue);
+        } else {
+          // 形が違う行はそのまま表示する
+          const p = el('p', 'pub-authors', tmp.innerHTML);
+          notes.forEach((n) => p.append(' ', el('span', 'award', escapeHtml(n))));
+          links.forEach((a) => p.append(' ', a));
+          body.append(p);
+        }
+        row.append(body);
+        ul.append(row);
+        entries.push({ year: Number(year), gi, row, title });
       });
       wrap.append(ul);
       out.push(wrap);
+      if (g.title) nav.push({ id: wrap.id, title: g.title, count: items.length });
     });
+
+    if (strip && entries.length >= 6) {
+      const chart = buildYearStrip(entries, list);
+      if (chart) out.splice(groups.length ? intro.length : 0, 0, chart);
+    }
+    fillRail(ctx.rail, nav);
     return out;
   },
 
-  contest(root) {
-    return renderCards(root, (raw, html) => {
-      const [text, team] = splitTeam(raw);
-      // 英語: "26th place in ..." / "268th (Bronze) place in ..."
-      // 日本語: "26位：..." / "268位（銅）：..."
-      const m =
-        text.match(/^(\d+)(?:st|nd|rd|th)\s*(?:\(([^)]+)\))?\s*place\s+in\s+([\s\S]+)$/i) ||
-        text.match(/^(\d+)位\s*(?:（([^）]+)）)?\s*[:：]\s*([\s\S]+)$/);
-      // 順位は不明だが圏内が確定しているもの: "Top 10 (Gold) in ..." / "トップ10（金）：..."
-      const top =
-        text.match(/^Top\s+(\d+)\s*(?:\(([^)]+)\))?\s+in\s+([\s\S]+)$/i) ||
-        text.match(/^トップ\s*(\d+)\s*(?:（([^）]+)）)?\s*[:：]\s*([\s\S]+)$/);
-      if (top) {
-        return { badge: `TOP${top[1]}`, tier: medalClass(top[2]), title: escapeHtml(top[3].trim()) + medalTag(top[2]), meta: teamMeta(team) };
-      }
-      if (!m) {
-        // "Platform: Rating" / "Platform：Rating" 形式（Ratings など）。Platform 部分のリンクは残す
-        const r = html.match(/^(.+?)(?::\s+|：\s*)([\s\S]+)$/);
-        return r ? { badge: '★', tier: '', icon: true, title: r[1], meta: r[2] } : null;
-      }
-      const rank = Number(m[1]);
-      const tier = medalClass(m[2]) || (rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : '');
-      return { badge: `#${rank}`, tier, title: escapeHtml(m[3].trim()) + medalTag(m[2]), meta: teamMeta(team) };
-    });
+  patent(root, ctx) {
+    return renderers.research(root, ctx, false);
   },
 
-  achievement(root) {
-    return renderCards(root, (raw) => {
-      const [text, team] = splitTeam(raw);
-      // "Award in Event" / "賞名：大会名"
-      const m = text.match(/^(.+?)(?:\s+in\s+|：)([\s\S]+)$/);
-      const place = text.match(/^(\d+)(?:(?:st|nd|rd|th)\s+place|位)/i);
-      const tier = place ? (['', 'gold', 'silver', 'bronze'][Number(place[1])] || '') : 'gold';
-      return {
-        badge: place ? `#${place[1]}` : '★',
-        tier,
-        icon: !place,
-        title: escapeHtml(m ? m[1] : text),
-        meta: [m ? escapeHtml(m[2]) : '', teamMeta(team)].filter(Boolean).join(' · '),
-      };
+  contest(root, ctx) {
+    const { intro, groups } = splitGroups(root);
+    const out = [...intro];
+    const tally = { gold: 0, silver: 0, bronze: 0 };
+    const nav = [];
+
+    groups.forEach((g, gi) => {
+      const items = topItems(g.nodes).map(parseResult);
+      const wrap = el('div', 'group');
+      wrap.id = `${ctx.sid}-g${gi}`;
+      wrap.append(groupTitle(g.title, items.length));
+      items.forEach((r) => {
+        if (r.medal && tally[r.tier] !== undefined) tally[r.tier]++;
+      });
+      wrap.append(items.every((r) => r.kind === 'rating') ? buildRatings(items) : buildBoard(items));
+      out.push(wrap);
+      nav.push({ id: wrap.id, title: g.title, count: items.length });
     });
+
+    // 左欄: メダルの内訳
+    let medals = null;
+    if (tally.gold + tally.silver + tally.bronze > 0) {
+      medals = el('ul', 'tally');
+      ['gold', 'silver', 'bronze'].forEach((k) => {
+        const li = el('li', k);
+        li.append(el('i'), el('b', '', String(tally[k])), el('span', '', t(`medal.${k}`)));
+        medals.append(li);
+      });
+    }
+    fillRail(ctx.rail, nav, medals);
+    return out;
+  },
+
+  // 受賞: 件数が少ないので 1 つの表にまとめ、分類（## 見出し）は列として示す
+  achievement(root, ctx) {
+    const { intro, groups } = splitGroups(root);
+    const items = groups.flatMap((g) =>
+      topItems(g.nodes).map((li) => {
+        const { html } = splitLi(li);
+        const tmp = el('div', '', html);
+        const { links } = popTrailing(tmp);
+        const [text, team] = splitTeam(tmp.textContent.trim());
+        // "Award in Event" / "賞名：大会名"
+        const m = text.match(/^(.+?)(?:\s+in\s+|：)([\s\S]+)$/);
+        const event = m ? m[2] : '';
+        const year = (event || text).match(YEAR_RE);
+        return {
+          kind: 'award',
+          badge: '★',
+          tier: 'gold',
+          title: escapeHtml(m ? m[1] : text),
+          meta: [escapeHtml(event), teamMeta(team)].filter(Boolean).join(' · '),
+          year: year ? year[0] : '',
+          cat: g.title,
+          links,
+        };
+      })
+    );
+    items.sort((a, b) => Number(b.year) - Number(a.year));
+    fillRail(ctx.rail, []);
+    return [...intro, buildBoard(items)];
   },
 };
 
-// コンテスト・受賞共通: h2 ごとのカードに、li をバッジ付きの行として並べる
-const renderCards = (root, parse) => {
-  const { intro, groups } = splitGroups(root);
-  const grid = el('div', 'card-grid');
-  groups.forEach((g, gi) => {
-    const items = topItems(g.nodes);
-    const card = el('article', 'card cat reveal');
-    card.style.setProperty('--d', `${(gi % 3) * 0.06}s`);
-    const head = el('div', 'cat-head');
-    head.append(el('h3', '', escapeHtml(g.title)));
-    head.append(el('span', 'count', String(items.length).padStart(2, '0')));
-    card.append(head);
+// 年ごとの件数を小さなマスの積み上げで示す。マスは各項目へのリンクで、行とホバーが連動する
+const buildYearStrip = (entries, groups) => {
+  const years = entries.map((e) => e.year).filter(Boolean);
+  if (!years.length) return null;
+  const min = Math.min(...years);
+  const max = Math.max(...years);
 
-    const ul = el('ul', 'results');
-    items.forEach((li) => {
-      const { html } = splitLi(li);
-      // 行末のリンク（Write-up など）は本文から外し、小さなボタンとして添える
-      const tmp = el('div', '', html);
-      const links = [];
-      while (tmp.lastChild && (tmp.lastChild.nodeName === 'A' || !tmp.lastChild.textContent.trim())) {
-        const node = tmp.lastChild;
-        if (node.nodeName === 'A') links.unshift(node);
-        node.remove();
-      }
-      const r = parse(tmp.textContent.trim(), tmp.innerHTML.trim());
-      const row = el('li', 'result');
-      row.append(el('span', `rank ${r ? r.tier : ''}${!r || r.icon ? ' icon' : ''}`, r ? r.badge : '•'));
-      const body = el('div', 'result-body', r ? r.title : tmp.innerHTML);
-      links.forEach((a) => {
-        a.className = 'result-link';
-        a.target = '_blank';
-        a.rel = 'noopener noreferrer';
-        body.append(' ', a);
+  const strip = el('div', 'yearstrip reveal');
+  strip.setAttribute('aria-hidden', 'true');
+  const cols = el('div', 'ys-cols');
+  for (let y = min; y <= max; y++) {
+    const col = el('div', 'ys-col');
+    const stack = el('div', 'ys-stack');
+    entries
+      .filter((e) => e.year === y)
+      .forEach((e) => {
+        const dot = el('a', `ys-dot g${e.gi % 4}`);
+        dot.href = `#${e.row.id}`;
+        dot.title = e.title;
+        dot.tabIndex = -1;
+        const sync = (on) => () => {
+          dot.classList.toggle('hot', on);
+          e.row.classList.toggle('hot', on);
+        };
+        [dot, e.row].forEach((node) => {
+          node.addEventListener('mouseenter', sync(true));
+          node.addEventListener('mouseleave', sync(false));
+        });
+        stack.append(dot);
       });
-      if (r && r.meta) body.append(el('span', 'meta', r.meta));
-      row.append(body);
-      ul.append(row);
-    });
-    card.append(ul);
-    grid.append(card);
+    col.append(stack, el('span', 'ys-year', String(y)));
+    cols.append(col);
+  }
+
+  const legend = el('p', 'ys-legend');
+  legend.append(el('span', 'ys-caption', t('strip.label')));
+  groups.forEach((g, gi) => {
+    if (!g.title) return;
+    const item = el('span', 'ys-key');
+    item.append(el('i', `ys-dot g${gi % 4}`), document.createTextNode(g.title));
+    legend.append(item);
   });
-  return [...intro, grid];
+  strip.append(cols, legend);
+  return strip;
+};
+
+// コンテストの 1 行を読み取る
+//   英語: "26th place in ... (Team: xxx)" / "268th (Bronze) place in ... (2018, 3,943 teams)"
+//   日本語: "26位：...（チーム：xxx）" / "268位（銅）：...（2018、3,943チーム）"
+//   順位は不明だが圏内が確定しているもの: "Top 10 (Gold) in ..." / "トップ10（金）：..."
+//   それ以外: "Platform: Rating" / "Platform：Rating"（Ratings など）
+const parseResult = (li) => {
+  const { html } = splitLi(li);
+  const tmp = el('div', '', html);
+  const { links } = popTrailing(tmp);
+  const [text, team] = splitTeam(tmp.textContent.trim());
+
+  const m =
+    text.match(/^(\d+)(?:st|nd|rd|th)\s*(?:\(([^)]+)\))?\s*place\s+in\s+([\s\S]+)$/i) ||
+    text.match(/^(\d+)位\s*(?:（([^）]+)）)?\s*[:：]\s*([\s\S]+)$/);
+  const top =
+    text.match(/^Top\s+(\d+)\s*(?:\(([^)]+)\))?\s+in\s+([\s\S]+)$/i) ||
+    text.match(/^トップ\s*(\d+)\s*(?:（([^）]+)）)?\s*[:：]\s*([\s\S]+)$/);
+  const hit = top || m;
+
+  if (!hit) {
+    // Platform 部分のリンクは残す
+    const r = tmp.innerHTML.trim().match(/^(.+?)(?::\s+|：\s*)([\s\S]+)$/);
+    return r ? { kind: 'rating', name: r[1], value: r[2], links } : { kind: 'plain', title: tmp.innerHTML, links };
+  }
+
+  const rank = Number(hit[1]);
+  const info = splitInfo(hit[3].trim());
+  const tier = medalClass(hit[2]) || (!top && rank <= 3 ? ['gold', 'silver', 'bronze'][rank - 1] : '');
+  return {
+    kind: 'rank',
+    rank,
+    badge: top ? `Top ${rank}` : String(rank),
+    hash: !top,
+    tier,
+    medal: hit[2] || '',
+    title: escapeHtml(info.title),
+    meta: teamMeta(team),
+    year: info.year,
+    field: top ? 0 : info.field,
+    unit: info.unit,
+    links,
+  };
+};
+
+// 末尾の括弧から開催年と参加数を取り出す: "(2026, 6,299 teams)" / "（2026、6,299チーム）" / "(2016)"
+const splitInfo = (title) => {
+  const fallbackYear = () => (title.match(YEAR_RE) || [''])[0];
+  const m = title.match(/^([\s\S]*?)\s*[（(]([^（）()]*)[）)]\s*$/);
+  if (!m) return { title, year: fallbackYear() };
+  const en = m[2].match(/^(\d{4})(?:,\s*([\d,]+)\s*(teams?|participants?))?$/i);
+  const ja = m[2].match(/^(\d{4})(?:、\s*(?:([\d,]+)\s*チーム|参加者\s*([\d,]+)\s*名))?$/);
+  if (!en && !ja) return { title, year: fallbackYear() };
+  const count = en ? en[2] : ja[2] || ja[3];
+  const unit = en ? (/^p/i.test(en[3] || '') ? 'participants' : 'teams') : ja[3] ? 'participants' : 'teams';
+  return {
+    title: m[1],
+    year: (en || ja)[1],
+    field: count ? Number(count.replace(/,/g, '')) : 0,
+    unit,
+  };
+};
+
+// 順位表: 順位 | 名称 | 上位何% か | 年
+const buildBoard = (items) => {
+  const ul = el('ul', 'board');
+  if (!items.some((r) => r.field || r.cat)) ul.classList.add('no-pct');
+  items.forEach((r) => {
+    const row = el('li', `lb-row brk reveal ${r.tier || ''}`);
+    if (r.kind === 'rank') {
+      row.append(el('span', 'lb-rank', (r.hash ? '<small>#</small>' : '') + escapeHtml(r.badge)));
+    } else {
+      row.append(el('span', 'lb-rank icon', r.badge || '•'));
+    }
+
+    const main = el('div', 'lb-main');
+    const title = el('span', 'lb-title', r.title + medalTag(r.medal));
+    (r.links || []).forEach((a) => title.append(' ', a));
+    main.append(title);
+    if (r.meta) main.append(el('span', 'lb-meta', r.meta));
+    row.append(main);
+
+    const pct = el('div', 'lb-pct');
+    if (r.field) {
+      const p = (r.rank / r.field) * 100;
+      pct.append(el('span', 'lb-pct-num', t('top')(p < 10 ? p.toFixed(1) : String(Math.round(p)))));
+      const bar = el('span', 'lb-bar');
+      const fill = el('i');
+      fill.style.width = `${Math.max(2, 100 - p).toFixed(1)}%`;
+      bar.append(fill);
+      pct.append(bar, el('span', 'lb-field', t(`of.${r.unit}`)(fmtNum(r.field))));
+    } else if (r.cat) {
+      pct.append(el('span', 'lb-cat', escapeHtml(r.cat)));
+    }
+    row.append(pct, el('span', 'lb-year', r.year || ''));
+    ul.append(row);
+  });
+  return ul;
+};
+
+// レーティング: "色（補足）" の形なら色名と補足に分け、色名には見本を添える
+const RATING_COLORS = {
+  gray: '#808080', brown: '#804000', green: '#008000', cyan: '#00c0c0', blue: '#0000ff', yellow: '#c0c000', orange: '#ff8000', red: '#ff0000',
+  灰色: '#808080', 茶色: '#804000', 緑: '#008000', 水色: '#00c0c0', 青: '#0000ff', 黄色: '#c0c000', 橙: '#ff8000', 赤: '#ff0000',
+};
+
+const buildRatings = (items) => {
+  const ul = el('ul', 'ratings');
+  items.forEach((r, i) => {
+    const li = el('li', 'rating reveal');
+    li.style.setProperty('--d', `${i * 0.06}s`);
+    li.append(el('span', 'rating-name', r.name || ''));
+    const m = (r.value || r.title || '').match(/^([\s\S]*?)\s*[（(]([\s\S]*)[）)]\s*$/);
+    const value = el('span', 'rating-value', m ? m[1] : r.value || r.title || '');
+    const color = RATING_COLORS[value.textContent.trim().toLowerCase()];
+    if (color) {
+      const sw = el('i', 'swatch');
+      sw.style.background = color;
+      value.prepend(sw);
+    }
+    li.append(value);
+    if (m) li.append(el('span', 'rating-note', m[2]));
+    ul.append(li);
+  });
+  return ul;
 };
 
 // =========================================================
@@ -460,8 +732,11 @@ const loadSection = async (container) => {
         ? items.filter((li) => /\bplace\b|^\s*Top\s+\d+|^\s*\d+位|^\s*トップ\s*\d+/i.test(li.textContent)).length
         : items.length;
 
+    const section = container.closest('section');
+    const ctx = { sid: section?.id ?? kind, rail: section ? $('.rail-meta', section) : null };
+    ctx.rail?.replaceChildren();
     const render = renderers[kind];
-    const nodes = render ? render(root) : Array.from(root.children);
+    const nodes = render ? render(root, ctx) : Array.from(root.children);
     container.replaceChildren(...nodes);
   } catch (err) {
     console.error(err);
@@ -527,8 +802,15 @@ const setupNav = () => {
   const toggle = $('.nav-toggle');
   const menu = $('.nav-links');
 
-  const onScroll = () => header.classList.toggle('scrolled', window.scrollY > 8);
+  // ヘッダーの背景と、画面上端の読み進みバー
+  const bar = $('.progress i');
+  const onScroll = () => {
+    header.classList.toggle('scrolled', window.scrollY > 8);
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    if (bar) bar.style.transform = `scaleX(${max > 0 ? Math.min(1, window.scrollY / max) : 0})`;
+  };
   window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll);
   onScroll();
 
   // 現在表示中のセクションをハイライト
@@ -572,10 +854,28 @@ const setupTheme = () => {
   const current = () => root.dataset.theme || (media.matches ? 'light' : 'dark');
   btn.addEventListener('click', () => {
     const next = current() === 'dark' ? 'light' : 'dark';
-    root.dataset.theme = next;
-    try {
-      localStorage.setItem('theme', next);
-    } catch (e) {}
+    const apply = () => {
+      root.dataset.theme = next;
+      try {
+        localStorage.setItem('theme', next);
+      } catch (e) {}
+    };
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!document.startViewTransition || reduce) {
+      apply();
+      return;
+    }
+    // ボタンの位置から円が広がるように切り替える
+    const r = btn.getBoundingClientRect();
+    const x = r.left + r.width / 2;
+    const y = r.top + r.height / 2;
+    const radius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+    document.startViewTransition(apply).ready.then(() => {
+      root.animate(
+        { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
+        { duration: 520, easing: 'cubic-bezier(0.2, 0.7, 0.2, 1)', pseudoElement: '::view-transition-new(root)' }
+      );
+    });
   });
 };
 

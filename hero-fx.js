@@ -3,8 +3,9 @@
 //   1. ブラウザ内の物体検出デモ（MediaPipe / EfficientDet-Lite0）
 //      - ボタンを押したときだけモデルを読み込む。カメラも押したときだけ起動する
 //      - 映像はブラウザ内で処理し、どこにも送信・保存しない
-//   2. LiDAR 風の点群背景（three.js）
+//   2. LiDAR 風の点群シーン（three.js）
 //      - 点群はコード内で生成した疑似データ（実在のデータセットは使っていない）
+//      - 歩行者を追跡している様子（3D の枠・ID・軌跡）を重ねる
 // =========================================================
 
 const $ = (sel) => document.querySelector(sel);
@@ -58,8 +59,8 @@ const setupDetection = () => {
     const sy = r.height / (el.naturalHeight || el.videoHeight);
     const ox = r.left - area.left;
     const oy = r.top - area.top;
-    const colPerson = cssVar('--accent-2');
-    const colOther = cssVar('--accent');
+    const colPerson = cssVar('--accent');
+    const colOther = cssVar('--accent-2');
     const ink = cssVar('--accent-ink');
 
     for (const d of detections) {
@@ -73,13 +74,10 @@ const setupDetection = () => {
 
       ctx.strokeStyle = col;
       ctx.lineWidth = 1.5;
-      ctx.shadowColor = col;
-      ctx.shadowBlur = 12;
       ctx.strokeRect(x, y, w, h);
-      ctx.shadowBlur = 0;
 
       const label = `${c.categoryName} ${c.score.toFixed(2)}`;
-      ctx.font = '500 11px "JetBrains Mono", monospace';
+      ctx.font = '500 11px "IBM Plex Mono", monospace';
       const tw = ctx.measureText(label).width + 12;
       const ly = Math.max(0, y - 19);
       ctx.fillStyle = col;
@@ -213,77 +211,163 @@ const setupDetection = () => {
 };
 
 // ---------------------------------------------------------
-// 2. LiDAR 風の点群背景
+// 2. LiDAR 風の点群シーン
+//    歩行空間を走る移動ロボットの周囲を想定した架空の配置。
 // ---------------------------------------------------------
-const OBJECTS = [
-  { type: 'box', x: 7, z: -4, w: 1.9, d: 4.3, h: 1.5 }, // 車
-  { type: 'box', x: -6, z: 9, w: 2.0, d: 4.6, h: 1.6 },
-  { type: 'box', x: 12, z: 10, w: 2.4, d: 6.0, h: 2.6 }, // トラック
-  { type: 'cyl', x: 3, z: 6, r: 0.35, h: 1.75 }, // 歩行者
-  { type: 'cyl', x: 4.2, z: 6.6, r: 0.33, h: 1.65 },
-  { type: 'cyl', x: -9, z: -7, r: 0.35, h: 1.8 },
-  { type: 'wall', x: -16 }, // 建物の壁
+const SENSOR_H = 1.9; // センサーの高さ [m]
+const MAX_RANGE = 46; // 計測範囲 [m]
+
+// 静止物。wall: x がこの値より小さい側が壁 / box: 直方体 / cyl: 円柱（y0 を指定すると宙に浮く）
+const STATIC = [
+  { type: 'wall', x: -17, h: 8 }, // 建物の壁
+  { type: 'box', x: 10, z: -9, w: 7, d: 1.4, h: 0.8 }, // 植栽の縁
+  { type: 'box', x: 14, z: 9, w: 2.6, d: 2.6, h: 3 }, // 売店
+  { type: 'box', x: -8, z: 12, w: 1.2, d: 3.6, h: 0.9 }, // ベンチ
+  { type: 'box', x: -11, z: -10, w: 3, d: 1.6, h: 2.2 }, // 設備
+  { type: 'cyl', x: 6, z: 4, r: 0.2, h: 5 }, // 街灯
+  { type: 'cyl', x: 6, z: -15, r: 0.2, h: 5 },
+  { type: 'cyl', x: -3, z: 19, r: 0.2, h: 5 },
+  { type: 'cyl', x: -5, z: -4, r: 0.3, h: 3.2 }, // 樹木（幹と樹冠）
+  { type: 'cyl', x: -5, z: -4, r: 2.2, y0: 3.2, h: 6.4 },
+  { type: 'cyl', x: 19, z: -2, r: 0.3, h: 3.2 },
+  { type: 'cyl', x: 19, z: -2, r: 2.4, y0: 3.2, h: 6.8 },
+  { type: 'cyl', x: 2, z: -22, r: 0.3, h: 3.2 },
+  { type: 'cyl', x: 2, z: -22, r: 2.2, y0: 3.2, h: 6.2 },
 ];
 
-// センサーから放射状にビームを出し、最初に当たった地面・物体の位置に点を置く
-const generatePoints = (rings, perRing) => {
-  const hit = (x, z) => {
-    for (const o of OBJECTS) {
-      if (o.type === 'box' && Math.abs(x - o.x) < o.w / 2 && Math.abs(z - o.z) < o.d / 2) return o;
-      if (o.type === 'cyl' && Math.hypot(x - o.x, z - o.z) < o.r) return o;
-      if (o.type === 'wall' && x < o.x) return o;
-    }
-    return null;
-  };
-  const out = [];
-  const sensorH = 1.9;
-  for (let ring = 0; ring < rings; ring++) {
-    const slope = Math.tan(-0.42 + (ring / rings) * 0.5);
-    for (let i = 0; i < perRing; i++) {
-      const ang = (i / perRing) * Math.PI * 2;
-      const cx = Math.cos(ang);
-      const cz = Math.sin(ang);
-      for (let r = 1; r < 38; r += 0.08) {
-        const y = sensorH + slope * r;
-        if (y <= 0) {
-          out.push(cx * r, 0, cz * r, 0);
-          break;
+// 追跡対象（歩行者）。折れ線の上を一定の速さで往復する
+const TRACKS = [
+  { id: 3, path: [[4, 10], [11, 3], [15, -5]], speed: 1.3 },
+  { id: 7, path: [[-3, 7], [2, 1], [3, -8], [-2, -14]], speed: 1.1 },
+  { id: 12, path: [[-13, 4], [-9, -2], [-13, -6]], speed: 0.9 },
+  { id: 15, path: [[9, 15], [1, 13], [-6, 17]], speed: 1.5 },
+  { id: 21, path: [[17, 3], [10, 6], [8, 12]], speed: 1.2 },
+];
+
+// センサーから出たビーム 1 本が最初に当たる点を求める。
+// (cx, cz): 水平方向の単位ベクトル / slope: 水平距離 1 m あたりの上下の変化
+const castRay = (cx, cz, slope) => {
+  let best = slope < 0 ? SENSOR_H / -slope : Infinity; // 地面
+  let kind = 0;
+  for (const o of STATIC) {
+    let rin;
+    let rout;
+    if (o.type === 'wall') {
+      if (cx >= 0) continue;
+      rin = o.x / cx;
+      rout = Infinity;
+    } else if (o.type === 'box') {
+      // 水平面でのスラブ法
+      rin = 0;
+      rout = Infinity;
+      const slabs = [
+        [o.x - o.w / 2, o.x + o.w / 2, cx],
+        [o.z - o.d / 2, o.z + o.d / 2, cz],
+      ];
+      let miss = false;
+      for (const [lo, hi, dir] of slabs) {
+        if (Math.abs(dir) < 1e-9) {
+          if (lo > 0 || hi < 0) miss = true;
+          continue;
         }
-        const o = hit(cx * r, cz * r);
-        if (o && y <= (o.type === 'wall' ? 9 : o.h)) {
-          out.push(cx * r, y, cz * r, o.type === 'wall' ? 2 : 1);
-          break;
-        }
-        if (y > 12) break;
+        const a = lo / dir;
+        const b = hi / dir;
+        rin = Math.max(rin, Math.min(a, b));
+        rout = Math.min(rout, Math.max(a, b));
       }
+      if (miss || rout < rin) continue;
+    } else {
+      const b = cx * o.x + cz * o.z;
+      const disc = b * b - (o.x * o.x + o.z * o.z - o.r * o.r);
+      if (disc < 0) continue;
+      const sq = Math.sqrt(disc);
+      rout = b + sq;
+      if (rout < 0) continue;
+      rin = Math.max(0, b - sq);
+    }
+
+    const y0 = o.y0 || 0;
+    const yin = SENSOR_H + slope * rin;
+    let r = Infinity;
+    if (yin >= y0 && yin <= o.h) r = rin; // 側面
+    else if (yin > o.h && slope < 0) r = (o.h - SENSOR_H) / slope; // 上面
+    else if (yin < y0 && slope > 0) r = (y0 - SENSOR_H) / slope; // 下面
+    if (r < rin || r > rout) continue;
+    if (r < best) {
+      best = r;
+      kind = o.type === 'wall' ? 2 : 1;
+    }
+  }
+  if (best > MAX_RANGE) return null;
+  return [cx * best, Math.max(0, SENSOR_H + slope * best), cz * best, kind];
+};
+
+// 全周を走査した 1 回分の点群を作る: [x, y, z, kind, ...]
+const generatePoints = (beams, steps) => {
+  const out = [];
+  for (let b = 0; b < beams; b++) {
+    const slope = Math.tan(((-25 + (b / (beams - 1)) * 37) * Math.PI) / 180);
+    for (let i = 0; i < steps; i++) {
+      const ang = ((i + (b % 2) * 0.5) / steps) * Math.PI * 2;
+      const hit = castRay(Math.cos(ang), Math.sin(ang), slope);
+      if (hit) out.push(...hit);
     }
   }
   return out;
 };
 
+// 折れ線上の位置と進行方向を返す
+const makeWalker = (track, index) => {
+  const pts = track.path;
+  const cum = [0];
+  for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+  const total = cum[cum.length - 1];
+  const phase = (index * 0.37 * total) % total;
+  return (time) => {
+    let s = (phase + track.speed * time) % (2 * total);
+    if (s < 0) s += 2 * total;
+    const back = s > total;
+    if (back) s = 2 * total - s;
+    let i = 1;
+    while (i < cum.length - 1 && cum[i] < s) i++;
+    const f = (s - cum[i - 1]) / (cum[i] - cum[i - 1]);
+    const [ax, az] = pts[i - 1];
+    const [bx, bz] = pts[i];
+    const sign = back ? -1 : 1;
+    const len = Math.hypot(bx - ax, bz - az);
+    return { x: ax + (bx - ax) * f, z: az + (bz - az) * f, dx: ((bx - ax) / len) * sign, dz: ((bz - az) / len) * sign };
+  };
+};
+
 const setupLidar = async () => {
   const canvas = $('.lidar');
   const hero = $('.hero');
+  const labelLayer = $('.lidar-labels');
   if (!canvas || !hero) return;
 
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const small = window.innerWidth < 760;
+  const small = window.innerWidth < 920;
 
   let THREE;
   let renderer;
   try {
     THREE = await import('https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js');
+    // CSS の色をそのまま使う（色空間の変換をしない）
+    THREE.ColorManagement.enabled = false;
     renderer = new THREE.WebGLRenderer({ canvas, antialias: !small, alpha: true });
+    renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
   } catch (e) {
-    return; // WebGL が使えない環境では背景なし（グリッドだけ）
+    hero.classList.add('no-gl'); // WebGL が使えない環境では、CSS の同心円だけを表示する
+    return;
   }
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, small ? 1.25 : 2));
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 200);
+  const camera = new THREE.PerspectiveCamera(46, 1, 0.1, 300);
 
-  // スマホでは点の数を減らす
-  const raw = generatePoints(small ? 18 : 32, small ? 480 : 900);
+  // ----- 点群（スマホでは点の数を減らす） -----
+  const beams = small ? 30 : 56;
+  const raw = generatePoints(beams, small ? 640 : 1300);
   const n = raw.length / 4;
   const pos = new Float32Array(n * 3);
   const kind = new Float32Array(n);
@@ -300,114 +384,234 @@ const setupLidar = async () => {
   geo.setAttribute('kind', new THREE.BufferAttribute(kind, 1));
   geo.setAttribute('ang', new THREE.BufferAttribute(ang, 1));
 
-  // 回転するビームが通過した直後の点を明るくし、時間とともに暗くする
+  // 高さで色を変える。回転するビームが通過した直後の点を明るくし、時間とともに暗くする
   const mat = new THREE.ShaderMaterial({
     transparent: true,
     depthWrite: false,
     uniforms: {
       uSweep: { value: 0 },
       uPix: { value: renderer.getPixelRatio() },
-      uGround: { value: new THREE.Color() },
-      uObj: { value: new THREE.Color() },
-      uWall: { value: new THREE.Color() },
+      uScale: { value: 40 },
+      uC0: { value: new THREE.Color() },
+      uC1: { value: new THREE.Color() },
+      uC2: { value: new THREE.Color() },
+      uC3: { value: new THREE.Color() },
       uBase: { value: 1 },
     },
     vertexShader: `
       attribute float kind; attribute float ang;
-      uniform float uSweep; uniform float uPix;
-      varying float vGlow; varying float vKind;
+      uniform float uSweep; uniform float uPix; uniform float uScale;
+      varying float vGlow; varying float vKind; varying float vT; varying float vFade;
       void main() {
         float d = mod(uSweep - ang + 6.28318, 6.28318);
-        vGlow = exp(-d * 1.6);
+        vGlow = exp(-d * 1.5);
         vKind = kind;
+        vT = clamp(position.y / 5.5, 0.0, 1.0);
+        vFade = 1.0 - smoothstep(18.0, 46.0, length(position.xz)) * 0.7;
         vec4 mv = modelViewMatrix * vec4(position, 1.0);
-        gl_PointSize = (1.4 + vGlow * 1.8) * uPix * (22.0 / -mv.z);
+        gl_PointSize = max(1.0, (1.0 + vGlow * 1.2) * uPix * uScale / -mv.z);
         gl_Position = projectionMatrix * mv;
       }`,
     fragmentShader: `
-      uniform vec3 uGround; uniform vec3 uObj; uniform vec3 uWall; uniform float uBase;
-      varying float vGlow; varying float vKind;
+      uniform vec3 uC0; uniform vec3 uC1; uniform vec3 uC2; uniform vec3 uC3; uniform float uBase;
+      varying float vGlow; varying float vKind; varying float vT; varying float vFade;
       void main() {
         vec2 c = gl_PointCoord - 0.5;
         if (dot(c, c) > 0.25) discard;
-        vec3 col = vKind > 1.5 ? uWall : (vKind > 0.5 ? uObj : uGround);
-        float base = vKind > 0.5 ? 0.35 : 0.12;
-        gl_FragColor = vec4(col, (base + vGlow * 0.85) * uBase);
+        vec3 ramp = mix(mix(uC1, uC2, smoothstep(0.0, 0.45, vT)), uC3, smoothstep(0.45, 1.0, vT));
+        vec3 col = vKind < 0.5 ? uC0 : ramp;
+        float base = vKind < 0.5 ? 0.2 : 0.55;
+        gl_FragColor = vec4(col, (base + vGlow * 0.8) * vFade * uBase);
       }`,
   });
   scene.add(new THREE.Points(geo, mat));
 
-  // 物体を囲む 3D バウンディングボックス（検出結果のイメージ）
-  const boxMat = new THREE.LineBasicMaterial({ transparent: true, opacity: 0.55 });
-  for (const o of OBJECTS) {
-    if (o.type === 'wall') continue;
-    const w = o.type === 'box' ? o.w : o.r * 2.4;
-    const d = o.type === 'box' ? o.d : o.r * 2.4;
-    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(w, o.h, d)), boxMat);
-    edges.position.set(o.x, o.h / 2, o.z);
-    scene.add(edges);
+  // ----- 自車の位置と距離の目安（10 m ごとの円） -----
+  const guideMat = new THREE.LineBasicMaterial({ transparent: true, opacity: 0.3 });
+  for (const radius of [10, 20, 30]) {
+    const ring = [];
+    for (let i = 0; i <= 128; i++) {
+      const a = (i / 128) * Math.PI * 2;
+      ring.push(new THREE.Vector3(Math.cos(a) * radius, 0.02, Math.sin(a) * radius));
+    }
+    scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(ring), guideMat));
   }
+  const trackMat = new THREE.LineBasicMaterial({ transparent: true, opacity: 0.95 });
+  const ego = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(1.1, 0.5, 0.7)), trackMat);
+  ego.position.y = 0.25;
+  scene.add(ego);
+
+  // ----- 追跡対象: 点のかたまり・3D の枠・進行方向・軌跡・ラベル -----
+  const TRAIL = 36;
+  const bodyGeo = (() => {
+    // センサーに向いた半周だけに点が付く
+    const p = [];
+    for (let row = 0; row < 11; row++) {
+      for (let col = 0; col < 7; col++) {
+        const phi = ((col - 3) / 3) * 1.25 + (row % 2) * 0.12;
+        p.push(Math.cos(phi) * 0.27, 0.16 + row * 0.15, Math.sin(phi) * 0.27);
+      }
+    }
+    return new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(p, 3));
+  })();
+  const bodyMat = new THREE.PointsMaterial({ size: 2.4, sizeAttenuation: false, transparent: true, opacity: 0.95, depthWrite: false });
+  const trailMat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false });
+  const boxGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(0.72, 1.76, 0.72));
+  const headGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0.03, 0), new THREE.Vector3(1.3, 0.03, 0)]);
+
+  const walkers = (small ? TRACKS.slice(0, 3) : TRACKS).map((track, i) => {
+    const at = makeWalker(track, i);
+    const body = new THREE.Points(bodyGeo, bodyMat);
+    const box = new THREE.LineSegments(boxGeo, trackMat);
+    box.position.y = 0.88;
+    const heading = new THREE.Line(headGeo, trackMat);
+    const group = new THREE.Group();
+    group.add(box, heading);
+
+    const trailPos = new Float32Array(TRAIL * 3);
+    const trailCol = new Float32Array(TRAIL * 4);
+    const trailGeo = new THREE.BufferGeometry();
+    trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPos, 3));
+    trailGeo.setAttribute('color', new THREE.BufferAttribute(trailCol, 4));
+    const trail = new THREE.Line(trailGeo, trailMat);
+    trail.frustumCulled = false;
+    scene.add(body, group, trail);
+
+    const label = document.createElement('span');
+    label.className = 'trk';
+    label.innerHTML = `ID ${String(track.id).padStart(2, '0')}<span>person ${track.speed.toFixed(1)} m/s</span>`;
+    labelLayer?.append(label);
+    return { track, at, body, group, trail, trailPos, trailCol, label };
+  });
+
+  const v = new THREE.Vector3();
+  const placeWalkers = (time) => {
+    const w = canvas.clientWidth;
+    const h = canvas.clientHeight;
+    for (const k of walkers) {
+      const p = k.at(time);
+      k.group.position.set(p.x, 0, p.z);
+      k.group.rotation.y = Math.atan2(-p.dz, p.dx);
+      k.body.position.set(p.x, 0, p.z);
+      k.body.rotation.y = Math.atan2(p.z, -p.x);
+
+      // 軌跡: 0.25 秒おきの過去の位置をつなぐ
+      for (let i = 0; i < TRAIL; i++) {
+        const q = k.at(time - i * 0.25);
+        k.trailPos[i * 3] = q.x;
+        k.trailPos[i * 3 + 1] = 0.03;
+        k.trailPos[i * 3 + 2] = q.z;
+      }
+      k.trail.geometry.attributes.position.needsUpdate = true;
+
+      // ラベルを枠の上端に合わせる
+      v.set(p.x, 1.9, p.z).project(camera);
+      // 画面の外と、見出しの文字に重なる位置（広い画面の左側）では隠す
+      const overText = w >= 920 && v.x * 0.5 + 0.5 < 0.5;
+      const visible = v.z < 1 && Math.abs(v.x) < 1.05 && Math.abs(v.y) < 1.05 && !overText;
+      k.label.style.opacity = visible ? '' : '0';
+      k.label.style.transform = `translate(${((v.x * 0.5 + 0.5) * w).toFixed(1)}px, ${((-v.y * 0.5 + 0.5) * h).toFixed(1)}px) translate(-50%, -130%)`;
+    }
+  };
 
   // テーマ（ダーク / ライト）に合わせて色と重ね方を切り替える
   const applyTheme = () => {
     const light = getComputedStyle(document.documentElement).colorScheme.includes('light');
-    mat.uniforms.uGround.value.set(cssVar('--accent'));
-    mat.uniforms.uObj.value.set(cssVar('--accent-2'));
-    mat.uniforms.uWall.value.set(cssVar('--muted'));
-    mat.uniforms.uBase.value = light ? 0.75 : 1;
+    mat.uniforms.uC0.value.set(cssVar('--pc-ground'));
+    mat.uniforms.uC1.value.set(cssVar('--pc-low'));
+    mat.uniforms.uC2.value.set(cssVar('--pc-mid'));
+    mat.uniforms.uC3.value.set(cssVar('--pc-high'));
+    mat.uniforms.uBase.value = light ? 1.25 : 1;
     mat.blending = light ? THREE.NormalBlending : THREE.AdditiveBlending;
     mat.needsUpdate = true;
-    boxMat.color.set(cssVar('--accent-2'));
-    boxMat.opacity = light ? 0.45 : 0.55;
+    guideMat.color.set(cssVar('--pc-ground'));
+    const line = new THREE.Color(cssVar('--accent-text'));
+    trackMat.color.copy(line);
+    bodyMat.color.copy(line);
+    for (const k of walkers) {
+      for (let i = 0; i < TRAIL; i++) {
+        k.trailCol.set([line.r, line.g, line.b, 0.75 * (1 - i / (TRAIL - 1)) ** 1.5], i * 4);
+      }
+      k.trail.geometry.attributes.color.needsUpdate = true;
+    }
   };
   applyTheme();
-  new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-  window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', applyTheme);
 
+  // 文字が左にあるので、広い画面ではシーンの中心を右に寄せる
   const resize = () => {
     const w = canvas.clientWidth;
     const h = canvas.clientHeight;
     renderer.setSize(w, h, false);
     camera.aspect = w / Math.max(1, h);
+    if (w >= 920) camera.setViewOffset(w, h, -w * 0.17, h * 0.03, w, h);
+    else camera.setViewOffset(w, h, 0, -h * 0.12, w, h);
     camera.updateProjectionMatrix();
+    mat.uniforms.uScale.value = Math.min(h, 980) * 0.055;
   };
 
-  const clock = new THREE.Clock();
+  // マウスの位置で少しだけ視点が動く
+  const pointer = { x: 0, y: 0, tx: 0, ty: 0 };
+  if (!reduce) {
+    hero.addEventListener('pointermove', (e) => {
+      if (e.pointerType === 'touch') return;
+      const r = hero.getBoundingClientRect();
+      pointer.tx = ((e.clientX - r.left) / r.width) * 2 - 1;
+      pointer.ty = ((e.clientY - r.top) / r.height) * 2 - 1;
+    });
+    hero.addEventListener('pointerleave', () => {
+      pointer.tx = 0;
+      pointer.ty = 0;
+    });
+  }
+
   const render = (time) => {
-    mat.uniforms.uSweep.value = (time * 2.2) % (Math.PI * 2);
-    const a = 0.6 + time * 0.05;
-    camera.position.set(Math.cos(a) * 26, 13, Math.sin(a) * 26);
-    camera.lookAt(-9, 0, 2);
+    pointer.x += (pointer.tx - pointer.x) * 0.045;
+    pointer.y += (pointer.ty - pointer.y) * 0.045;
+    mat.uniforms.uSweep.value = (time * 1.9) % (Math.PI * 2);
+    // 壁の裏に回り込まないよう、開けた側で左右に振る
+    const az = 0.42 + Math.sin(time * 0.05) * 0.5 + pointer.x * 0.22;
+    const el = 0.47 - pointer.y * 0.06;
+    const dist = small ? 40 : 33;
+    camera.position.set(Math.cos(az) * Math.cos(el) * dist, Math.sin(el) * dist, Math.sin(az) * Math.cos(el) * dist);
+    camera.lookAt(0, 0.8, 0);
+    camera.updateMatrixWorld();
+    placeWalkers(time);
     renderer.render(scene, camera);
   };
 
+  $('.hud-beams') && ($('.hud-beams').textContent = `${beams} beams`);
+  $('.hud-pts') && ($('.hud-pts').textContent = `${n.toLocaleString('en-US')} pts`);
+  $('.hud-tracks') && ($('.hud-tracks').textContent = `${walkers.length} tracks`);
+
   resize();
+
+  // 動きを減らす設定では静止画を 1 枚だけ描く
+  const STILL = 8;
+  const onTheme = () => {
+    applyTheme();
+    if (reduce) render(STILL);
+  };
+  new MutationObserver(onTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', onTheme);
   window.addEventListener('resize', () => {
     resize();
-    if (reduce) render(6);
+    if (reduce) render(STILL);
   });
-
-  // 動きを減らす設定では静止画を1枚だけ描く
   if (reduce) {
-    render(6);
-    new MutationObserver(() => render(6)).observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['data-theme'],
-    });
+    render(STILL);
     return;
   }
 
   // ヒーローが画面に見えている間だけ描画する
-  let visible = true;
+  const clock = new THREE.Clock();
   let raf = 0;
   const loop = () => {
-    render(clock.getElapsedTime());
+    render(clock.getElapsedTime() + STILL);
     raf = requestAnimationFrame(loop);
   };
   new IntersectionObserver(([entry]) => {
-    visible = entry.isIntersecting;
     cancelAnimationFrame(raf);
-    if (visible) loop();
+    if (entry.isIntersecting) loop();
   }).observe(hero);
 };
 
