@@ -3,15 +3,22 @@
 //   1. ブラウザ内の物体検出デモ（MediaPipe / EfficientDet-Lite0）
 //      - ボタンを押したときだけモデルを読み込む。カメラも押したときだけ起動する
 //      - 映像はブラウザ内で処理し、どこにも送信・保存しない
-//   2. LiDAR 風の点群シーン（three.js）
-//      - 点群はコード内で生成した疑似データ（実在のデータセットは使っていない）
-//      - 歩行者を追跡している様子（3D の枠・ID・軌跡）を重ねる
+//   2. LiDAR の点群シーン（three.js + WebAssembly）
+//      - 点群はシミュレーションで作る（実在のデータセットは使っていない）
+//      - その点群から、地面の推定・クラスタリング・追跡・経路計画までを
+//        ブラウザ内で実行する。処理は Rust で書いてある（perception/）
+//      - 3D の枠・ID・軌跡は、その追跡の結果をそのまま描いたもの
 // =========================================================
 
 const $ = (sel) => document.querySelector(sel);
 // app.js の翻訳関数（言語切り替え後も data-i18n で追従する）
 const tr = (key) => (typeof t === 'function' ? t(key) : key);
 const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+// 翻訳が関数（数値を埋め込む文）の項目用
+const trf = (key, ...args) => {
+  const f = tr(key);
+  return typeof f === 'function' ? f(...args) : '';
+};
 
 // ---------------------------------------------------------
 // 1. 物体検出デモ
@@ -211,132 +218,31 @@ const setupDetection = () => {
 };
 
 // ---------------------------------------------------------
-// 2. LiDAR 風の点群シーン
-//    歩行空間を走る移動ロボットの周囲を想定した架空の配置。
+// 2. LiDAR の点群シーン
+//    点群の生成（LiDAR のシミュレーション）と、点群からの認識・追跡・経路計画は
+//    Rust で書いて WebAssembly にしてある（ソースは perception/）。
+//    ここでは、その結果を three.js で描くことと、操作の受け付けだけを行う。
 // ---------------------------------------------------------
-const SENSOR_H = 1.9; // センサーの高さ [m]
-const MAX_RANGE = 46; // 計測範囲 [m]
+const WASM_URL = 'perception.wasm?v=1'; // 出力の並びを変えたら、古いキャッシュを使わないよう番号を上げる
+const SEED = 20261124;
+// perception/src/lib.rs の出力の並びに合わせる
+const POINT_STRIDE = 5; // x, y, z, 種類, 色分け用の番号
+const TRACK_STRIDE = 12; // 番号, 予測中か, x, z, vx, vz, 幅, 高さ, 見失った回数, 経過, 軌跡の長さ, 速さ
+const MAX_TRACKS = 32;
+const TRAIL = 40;
+const MAX_PATH = 256;
+const STATE_LEN = 32;
+const S = { X: 0, Z: 1, YAW: 2, NAV: 4, GX: 5, GZ: 6, HAS_GOAL: 7, RAYS: 8, POINTS: 9, GROUND: 10, CLUSTERS: 11, TRACKS: 13, REMAIN: 14, MS: 16, AGE: 24, PATH_N: 25 };
 
-// 静止物。wall: x がこの値より小さい側が壁 / box: 直方体 / cyl: 円柱（y0 を指定すると宙に浮く）
-const STATIC = [
-  { type: 'wall', x: -17, h: 8 }, // 建物の壁
-  { type: 'box', x: 10, z: -9, w: 7, d: 1.4, h: 0.8 }, // 植栽の縁
-  { type: 'box', x: 14, z: 9, w: 2.6, d: 2.6, h: 3 }, // 売店
-  { type: 'box', x: -8, z: 12, w: 1.2, d: 3.6, h: 0.9 }, // ベンチ
-  { type: 'box', x: -11, z: -10, w: 3, d: 1.6, h: 2.2 }, // 設備
-  { type: 'cyl', x: 6, z: 4, r: 0.2, h: 5 }, // 街灯
-  { type: 'cyl', x: 6, z: -15, r: 0.2, h: 5 },
-  { type: 'cyl', x: -3, z: 19, r: 0.2, h: 5 },
-  { type: 'cyl', x: -5, z: -4, r: 0.3, h: 3.2 }, // 樹木（幹と樹冠）
-  { type: 'cyl', x: -5, z: -4, r: 2.2, y0: 3.2, h: 6.4 },
-  { type: 'cyl', x: 19, z: -2, r: 0.3, h: 3.2 },
-  { type: 'cyl', x: 19, z: -2, r: 2.4, y0: 3.2, h: 6.8 },
-  { type: 'cyl', x: 2, z: -22, r: 0.3, h: 3.2 },
-  { type: 'cyl', x: 2, z: -22, r: 2.2, y0: 3.2, h: 6.2 },
-];
-
-// 追跡対象（歩行者）。折れ線の上を一定の速さで往復する
-const TRACKS = [
-  { id: 3, path: [[4, 10], [11, 3], [15, -5]], speed: 1.3 },
-  { id: 7, path: [[-3, 7], [2, 1], [3, -8], [-2, -14]], speed: 1.1 },
-  { id: 12, path: [[-13, 4], [-9, -2], [-13, -6]], speed: 0.9 },
-  { id: 15, path: [[9, 15], [1, 13], [-6, 17]], speed: 1.5 },
-  { id: 21, path: [[17, 3], [10, 6], [8, 12]], speed: 1.2 },
-];
-
-// センサーから出たビーム 1 本が最初に当たる点を求める。
-// (cx, cz): 水平方向の単位ベクトル / slope: 水平距離 1 m あたりの上下の変化
-const castRay = (cx, cz, slope) => {
-  let best = slope < 0 ? SENSOR_H / -slope : Infinity; // 地面
-  let kind = 0;
-  for (const o of STATIC) {
-    let rin;
-    let rout;
-    if (o.type === 'wall') {
-      if (cx >= 0) continue;
-      rin = o.x / cx;
-      rout = Infinity;
-    } else if (o.type === 'box') {
-      // 水平面でのスラブ法
-      rin = 0;
-      rout = Infinity;
-      const slabs = [
-        [o.x - o.w / 2, o.x + o.w / 2, cx],
-        [o.z - o.d / 2, o.z + o.d / 2, cz],
-      ];
-      let miss = false;
-      for (const [lo, hi, dir] of slabs) {
-        if (Math.abs(dir) < 1e-9) {
-          if (lo > 0 || hi < 0) miss = true;
-          continue;
-        }
-        const a = lo / dir;
-        const b = hi / dir;
-        rin = Math.max(rin, Math.min(a, b));
-        rout = Math.min(rout, Math.max(a, b));
-      }
-      if (miss || rout < rin) continue;
-    } else {
-      const b = cx * o.x + cz * o.z;
-      const disc = b * b - (o.x * o.x + o.z * o.z - o.r * o.r);
-      if (disc < 0) continue;
-      const sq = Math.sqrt(disc);
-      rout = b + sq;
-      if (rout < 0) continue;
-      rin = Math.max(0, b - sq);
-    }
-
-    const y0 = o.y0 || 0;
-    const yin = SENSOR_H + slope * rin;
-    let r = Infinity;
-    if (yin >= y0 && yin <= o.h) r = rin; // 側面
-    else if (yin > o.h && slope < 0) r = (o.h - SENSOR_H) / slope; // 上面
-    else if (yin < y0 && slope > 0) r = (y0 - SENSOR_H) / slope; // 下面
-    if (r < rin || r > rout) continue;
-    if (r < best) {
-      best = r;
-      kind = o.type === 'wall' ? 2 : 1;
-    }
+const loadPerception = async () => {
+  const imports = { env: { now: () => performance.now() } };
+  try {
+    return (await WebAssembly.instantiateStreaming(fetch(WASM_URL), imports)).instance.exports;
+  } catch (e) {
+    // .wasm を application/wasm で返さないサーバーでは、全体を読み込んでから渡す
+    const bytes = await (await fetch(WASM_URL)).arrayBuffer();
+    return (await WebAssembly.instantiate(bytes, imports)).instance.exports;
   }
-  if (best > MAX_RANGE) return null;
-  return [cx * best, Math.max(0, SENSOR_H + slope * best), cz * best, kind];
-};
-
-// 全周を走査した 1 回分の点群を作る: [x, y, z, kind, ...]
-const generatePoints = (beams, steps) => {
-  const out = [];
-  for (let b = 0; b < beams; b++) {
-    const slope = Math.tan(((-25 + (b / (beams - 1)) * 37) * Math.PI) / 180);
-    for (let i = 0; i < steps; i++) {
-      const ang = ((i + (b % 2) * 0.5) / steps) * Math.PI * 2;
-      const hit = castRay(Math.cos(ang), Math.sin(ang), slope);
-      if (hit) out.push(...hit);
-    }
-  }
-  return out;
-};
-
-// 折れ線上の位置と進行方向を返す
-const makeWalker = (track, index) => {
-  const pts = track.path;
-  const cum = [0];
-  for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
-  const total = cum[cum.length - 1];
-  const phase = (index * 0.37 * total) % total;
-  return (time) => {
-    let s = (phase + track.speed * time) % (2 * total);
-    if (s < 0) s += 2 * total;
-    const back = s > total;
-    if (back) s = 2 * total - s;
-    let i = 1;
-    while (i < cum.length - 1 && cum[i] < s) i++;
-    const f = (s - cum[i - 1]) / (cum[i] - cum[i - 1]);
-    const [ax, az] = pts[i - 1];
-    const [bx, bz] = pts[i];
-    const sign = back ? -1 : 1;
-    const len = Math.hypot(bx - ax, bz - az);
-    return { x: ax + (bx - ax) * f, z: az + (bz - az) * f, dx: ((bx - ax) / len) * sign, dz: ((bz - az) / len) * sign };
-  };
 };
 
 const setupLidar = async () => {
@@ -350,123 +256,224 @@ const setupLidar = async () => {
 
   let THREE;
   let renderer;
+  let sim;
   try {
-    THREE = await import('https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js');
+    [THREE, sim] = await Promise.all([
+      import('https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js'),
+      loadPerception(),
+    ]);
     // CSS の色をそのまま使う（色空間の変換をしない）
     THREE.ColorManagement.enabled = false;
     renderer = new THREE.WebGLRenderer({ canvas, antialias: !small, alpha: true });
     renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
   } catch (e) {
-    hero.classList.add('no-gl'); // WebGL が使えない環境では、CSS の同心円だけを表示する
+    hero.classList.add('no-gl'); // WebGL か WebAssembly が使えない環境では、CSS の同心円だけを表示する
     return;
   }
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, small ? 1.25 : 2));
 
+  // ----- シミュレーションと認識（WebAssembly）。スマホではビームの数を減らす -----
+  const beams = small ? 30 : 56;
+  const steps = small ? 640 : 1300;
+  const maxPoints = beams * steps;
+  sim.init(SEED, beams, steps, small ? 3 : 5);
+  const GRID = sim.costmap_size();
+
+  // WebAssembly のメモリを直接読む。メモリが拡張されると作り直しが要る
+  let buffer = null;
+  let state;
+  let tracks;
+  let trails;
+  let pathSrc;
+  let pointsSrc;
+  let costSrc;
+  const refresh = (force) => {
+    if (!force && buffer === sim.memory.buffer) return;
+    buffer = sim.memory.buffer;
+    state = new Float32Array(buffer, sim.state_ptr(), STATE_LEN);
+    tracks = new Float32Array(buffer, sim.tracks_ptr(), MAX_TRACKS * TRACK_STRIDE);
+    trails = new Float32Array(buffer, sim.trails_ptr(), MAX_TRACKS * TRAIL * 2);
+    pathSrc = new Float32Array(buffer, sim.path_ptr(), MAX_PATH * 2);
+    pointsSrc = new Float32Array(buffer, sim.points_ptr(), maxPoints * POINT_STRIDE);
+    costSrc = new Uint8Array(buffer, sim.costmap_ptr(), GRID * GRID);
+  };
+
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(46, 1, 0.1, 300);
 
-  // ----- 点群（スマホでは点の数を減らす） -----
-  const beams = small ? 30 : 56;
-  const raw = generatePoints(beams, small ? 640 : 1300);
-  const n = raw.length / 4;
-  const pos = new Float32Array(n * 3);
-  const kind = new Float32Array(n);
-  const ang = new Float32Array(n);
-  for (let i = 0; i < n; i++) {
-    pos[i * 3] = raw[i * 4];
-    pos[i * 3 + 1] = raw[i * 4 + 1];
-    pos[i * 3 + 2] = raw[i * 4 + 2];
-    kind[i] = raw[i * 4 + 3];
-    ang[i] = (Math.atan2(raw[i * 4 + 2], raw[i * 4]) + Math.PI * 2) % (Math.PI * 2);
-  }
+  // ----- 点群 -----
+  const pointData = new Float32Array(maxPoints * POINT_STRIDE);
+  const pointBuf = new THREE.InterleavedBuffer(pointData, POINT_STRIDE);
+  pointBuf.setUsage(THREE.DynamicDrawUsage);
   const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  geo.setAttribute('kind', new THREE.BufferAttribute(kind, 1));
-  geo.setAttribute('ang', new THREE.BufferAttribute(ang, 1));
+  geo.setAttribute('position', new THREE.InterleavedBufferAttribute(pointBuf, 3, 0));
+  geo.setAttribute('cls', new THREE.InterleavedBufferAttribute(pointBuf, 1, 3));
+  geo.setAttribute('key', new THREE.InterleavedBufferAttribute(pointBuf, 1, 4));
+  geo.setDrawRange(0, 0);
 
-  // 高さで色を変える。回転するビームが通過した直後の点を明るくし、時間とともに暗くする
+  // cls: 0 = 地面 / 1 = 静止物 / 2 = 人くらいの大きさの静止物 / 3 = 追跡中の動く物体
+  // uMode: 0 = 高さで色分け / 1 = 地面・静止物・動く物体 / 2 = クラスタごと
   const mat = new THREE.ShaderMaterial({
     transparent: true,
     depthWrite: false,
     uniforms: {
-      uSweep: { value: 0 },
       uPix: { value: renderer.getPixelRatio() },
       uScale: { value: 40 },
+      uMode: { value: 0 },
+      uEgo: { value: new THREE.Vector2() },
       uC0: { value: new THREE.Color() },
       uC1: { value: new THREE.Color() },
       uC2: { value: new THREE.Color() },
       uC3: { value: new THREE.Color() },
+      uMove: { value: new THREE.Color() },
+      uStatic: { value: new THREE.Color() },
       uBase: { value: 1 },
+      uLight: { value: 0 },
     },
     vertexShader: `
-      attribute float kind; attribute float ang;
-      uniform float uSweep; uniform float uPix; uniform float uScale;
-      varying float vGlow; varying float vKind; varying float vT; varying float vFade;
+      attribute float cls; attribute float key;
+      uniform float uPix; uniform float uScale; uniform vec2 uEgo;
+      varying float vCls; varying float vKey; varying float vT; varying float vFade;
       void main() {
-        float d = mod(uSweep - ang + 6.28318, 6.28318);
-        vGlow = exp(-d * 1.5);
-        vKind = kind;
+        vCls = cls;
+        vKey = key;
         vT = clamp(position.y / 5.5, 0.0, 1.0);
-        vFade = 1.0 - smoothstep(18.0, 46.0, length(position.xz)) * 0.7;
+        // 遠い点ほど暗く、センサーに近い点ほど明るく描く
+        float r = length(position.xz - uEgo);
+        vFade = 1.0 - smoothstep(18.0, 46.0, r) * 0.7 + (1.0 - smoothstep(3.0, 15.0, r)) * 0.55;
         vec4 mv = modelViewMatrix * vec4(position, 1.0);
-        gl_PointSize = max(1.0, (1.0 + vGlow * 1.2) * uPix * uScale / -mv.z);
+        gl_PointSize = max(1.0, (cls > 2.5 ? 1.9 : 1.0) * uPix * uScale / -mv.z);
         gl_Position = projectionMatrix * mv;
       }`,
     fragmentShader: `
-      uniform vec3 uC0; uniform vec3 uC1; uniform vec3 uC2; uniform vec3 uC3; uniform float uBase;
-      varying float vGlow; varying float vKind; varying float vT; varying float vFade;
+      uniform vec3 uC0; uniform vec3 uC1; uniform vec3 uC2; uniform vec3 uC3; uniform vec3 uMove; uniform vec3 uStatic;
+      uniform float uBase; uniform float uMode; uniform float uLight;
+      varying float vCls; varying float vKey; varying float vT; varying float vFade;
+      vec3 hue(float h) {
+        vec3 c = clamp(abs(mod(h * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
+        return mix(vec3(1.0), c, 0.8) * mix(1.0, 0.62, uLight);
+      }
       void main() {
         vec2 c = gl_PointCoord - 0.5;
         if (dot(c, c) > 0.25) discard;
-        vec3 ramp = mix(mix(uC1, uC2, smoothstep(0.0, 0.45, vT)), uC3, smoothstep(0.45, 1.0, vT));
-        vec3 col = vKind < 0.5 ? uC0 : ramp;
-        float base = vKind < 0.5 ? 0.2 : 0.55;
-        gl_FragColor = vec4(col, (base + vGlow * 0.8) * vFade * uBase);
+        vec3 col = uC0;
+        float a = 0.27;
+        if (vCls > 2.5) {
+          col = uMove;
+          a = 1.0;
+        } else if (uMode < 0.5) {
+          if (vCls > 0.5) {
+            col = mix(mix(uC1, uC2, smoothstep(0.0, 0.45, vT)), uC3, smoothstep(0.45, 1.0, vT));
+            a = 0.68;
+          }
+        } else if (uMode < 1.5) {
+          if (vCls > 0.5) { col = uStatic; a = 0.72; }
+        } else {
+          a = 0.13;
+          if (vCls > 0.5) {
+            col = vKey > 0.5 ? hue(fract(vKey * 0.61803)) : uStatic;
+            a = vKey > 0.5 ? 0.9 : 0.4;
+          }
+        }
+        gl_FragColor = vec4(col, a * vFade * uBase);
       }`,
   });
-  scene.add(new THREE.Points(geo, mat));
+  const cloud = new THREE.Points(geo, mat);
+  cloud.frustumCulled = false;
+  scene.add(cloud);
 
-  // ----- 自車の位置と距離の目安（10 m ごとの円） -----
-  const guideMat = new THREE.LineBasicMaterial({ transparent: true, opacity: 0.3 });
-  for (const radius of [10, 20, 30]) {
-    const ring = [];
-    for (let i = 0; i <= 128; i++) {
-      const a = (i / 128) * Math.PI * 2;
-      ring.push(new THREE.Vector3(Math.cos(a) * radius, 0.02, Math.sin(a) * radius));
+  // ----- コストマップ（経路計画が見ている地図。操作モードで表示できる） -----
+  const costData = new Uint8Array(GRID * GRID * 4);
+  const costTex = new THREE.DataTexture(costData, GRID, GRID, THREE.RGBAFormat, THREE.UnsignedByteType);
+  costTex.magFilter = THREE.LinearFilter;
+  costTex.minFilter = THREE.LinearFilter;
+  const costMat = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+    uniforms: { uMap: { value: costTex }, uLow: { value: new THREE.Color() }, uHigh: { value: new THREE.Color() } },
+    vertexShader: `
+      varying vec2 vUv; varying vec2 vPos;
+      void main() {
+        vUv = uv;
+        vPos = position.xz;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }`,
+    fragmentShader: `
+      uniform sampler2D uMap; uniform vec3 uLow; uniform vec3 uHigh;
+      varying vec2 vUv; varying vec2 vPos;
+      void main() {
+        float c = texture2D(uMap, vUv).r;
+        if (c < 0.01) discard;
+        // 計画の対象外（半径 23 m より外）は描かない
+        float inside = 1.0 - smoothstep(22.0, 23.0, length(vPos));
+        gl_FragColor = vec4(mix(uLow, uHigh, smoothstep(0.1, 1.0, c)), (0.1 + 0.42 * c) * inside);
+      }`,
+  });
+  const costGeo = new THREE.BufferGeometry();
+  costGeo.setAttribute('position', new THREE.Float32BufferAttribute([-24, 0.01, -24, 24, 0.01, -24, 24, 0.01, 24, -24, 0.01, 24], 3));
+  costGeo.setAttribute('uv', new THREE.Float32BufferAttribute([0, 0, 1, 0, 1, 1, 0, 1], 2));
+  costGeo.setIndex([0, 2, 1, 0, 3, 2]);
+  const costPlane = new THREE.Mesh(costGeo, costMat);
+  costPlane.visible = false;
+  costPlane.renderOrder = -1;
+  scene.add(costPlane);
+
+  // ----- ロボットの位置と距離の目安（10 m ごとの円） -----
+  const circle = (radius, y, segments = 128) => {
+    const pts = [];
+    for (let i = 0; i <= segments; i++) {
+      const a = (i / segments) * Math.PI * 2;
+      pts.push(new THREE.Vector3(Math.cos(a) * radius, y, Math.sin(a) * radius));
     }
-    scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(ring), guideMat));
-  }
+    return new THREE.BufferGeometry().setFromPoints(pts);
+  };
+  const guideMat = new THREE.LineBasicMaterial({ transparent: true, opacity: 0.3 });
+  const rings = new THREE.Group();
+  for (const radius of [10, 20, 30]) rings.add(new THREE.Line(circle(radius, 0.02), guideMat));
+  scene.add(rings);
+
   const trackMat = new THREE.LineBasicMaterial({ transparent: true, opacity: 0.95 });
-  const ego = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(1.1, 0.5, 0.7)), trackMat);
-  ego.position.y = 0.25;
+  const coastMat = new THREE.LineBasicMaterial({ transparent: true, opacity: 0.38 });
+  const ego = new THREE.Group();
+  const egoBox = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(1.1, 0.5, 0.7)), trackMat);
+  egoBox.position.y = 0.25;
+  // 進行方向を示す三角
+  const egoNose = new THREE.LineLoop(
+    new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0.55, 0.5, -0.2), new THREE.Vector3(0.85, 0.5, 0), new THREE.Vector3(0.55, 0.5, 0.2)]),
+    trackMat
+  );
+  ego.add(egoBox, egoNose);
   scene.add(ego);
 
-  // ----- 追跡対象: 点のかたまり・3D の枠・進行方向・軌跡・ラベル -----
-  const TRAIL = 36;
-  const bodyGeo = (() => {
-    // センサーに向いた半周だけに点が付く
-    const p = [];
-    for (let row = 0; row < 11; row++) {
-      for (let col = 0; col < 7; col++) {
-        const phi = ((col - 3) / 3) * 1.25 + (row % 2) * 0.12;
-        p.push(Math.cos(phi) * 0.27, 0.16 + row * 0.15, Math.sin(phi) * 0.27);
-      }
-    }
-    return new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(p, 3));
-  })();
-  const bodyMat = new THREE.PointsMaterial({ size: 2.4, sizeAttenuation: false, transparent: true, opacity: 0.95, depthWrite: false });
-  const trailMat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false });
-  const boxGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(0.72, 1.76, 0.72));
-  const headGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0.03, 0), new THREE.Vector3(1.3, 0.03, 0)]);
+  // ----- 経路と目的地 -----
+  const navMat = new THREE.LineBasicMaterial({ transparent: true, opacity: 0.9 });
+  const pathPos = new Float32Array(MAX_PATH * 3);
+  const pathGeo = new THREE.BufferGeometry();
+  pathGeo.setAttribute('position', new THREE.BufferAttribute(pathPos, 3));
+  const pathLine = new THREE.Line(pathGeo, navMat);
+  pathLine.frustumCulled = false;
+  pathLine.visible = false;
+  const goalMark = new THREE.Group();
+  goalMark.add(new THREE.Line(circle(0.45, 0.04, 40), navMat), new THREE.Line(circle(0.12, 0.04, 16), navMat));
+  goalMark.visible = false;
+  // クリックした場所に一瞬だけ出す円
+  const pingMat = new THREE.LineBasicMaterial({ transparent: true, opacity: 0 });
+  const ping = new THREE.Line(circle(1, 0.05, 48), pingMat);
+  ping.visible = false;
+  let pingT = 1;
+  scene.add(pathLine, goalMark, ping);
 
-  const walkers = (small ? TRACKS.slice(0, 3) : TRACKS).map((track, i) => {
-    const at = makeWalker(track, i);
-    const body = new THREE.Points(bodyGeo, bodyMat);
-    const box = new THREE.LineSegments(boxGeo, trackMat);
-    box.position.y = 0.88;
+  // ----- 追跡: 3D の枠・進む向き・軌跡・ラベル（追跡の数は変わるので、先に用意して使い回す） -----
+  const trailMat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false });
+  const unitBox = new THREE.EdgesGeometry(new THREE.BoxGeometry(1, 1, 1));
+  const headGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0.03, 0), new THREE.Vector3(1, 0.03, 0)]);
+  const pool = Array.from({ length: small ? 12 : MAX_TRACKS }, () => {
+    const box = new THREE.LineSegments(unitBox, trackMat);
     const heading = new THREE.Line(headGeo, trackMat);
     const group = new THREE.Group();
     group.add(box, heading);
+    group.visible = false;
 
     const trailPos = new Float32Array(TRAIL * 3);
     const trailCol = new Float32Array(TRAIL * 4);
@@ -475,60 +482,122 @@ const setupLidar = async () => {
     trailGeo.setAttribute('color', new THREE.BufferAttribute(trailCol, 4));
     const trail = new THREE.Line(trailGeo, trailMat);
     trail.frustumCulled = false;
-    scene.add(body, group, trail);
+    trail.visible = false;
+    scene.add(group, trail);
 
     const label = document.createElement('span');
     label.className = 'trk';
-    label.innerHTML = `ID ${String(track.id).padStart(2, '0')}<span>person ${track.speed.toFixed(1)} m/s</span>`;
+    label.style.opacity = '0';
     labelLayer?.append(label);
-    return { track, at, body, group, trail, trailPos, trailCol, label };
+    return { box, heading, group, trail, trailPos, trailCol, label, text: '' };
   });
 
+  // ----- 操作モード（ロボットを動かす・歩行者や障害物を足す） -----
+  const lab = $('#lab');
+  let labOn = false;
+  let tool = 'goal';
+  let costOn = false;
+  // ラベルを出さない領域（見出しの文字・操作パネル・数値の帯の上）
+  let blocked = [];
+  const measureBlocked = () => {
+    const c = canvas.getBoundingClientRect();
+    blocked = [labOn ? lab : $('.hero-copy'), $('.stats')]
+      .map((el) => el?.getBoundingClientRect())
+      .filter((r) => r && r.width)
+      .map((r) => ({ l: r.left - c.left - 70, r: r.right - c.left + 70, t: r.top - c.top - 6, b: r.bottom - c.top + 34 }));
+  };
+
   const v = new THREE.Vector3();
-  const placeWalkers = (time) => {
+  const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
+  const placeTracks = () => {
     const w = canvas.clientWidth;
     const h = canvas.clientHeight;
-    for (const k of walkers) {
-      const p = k.at(time);
-      k.group.position.set(p.x, 0, p.z);
-      k.group.rotation.y = Math.atan2(-p.dz, p.dx);
-      k.body.position.set(p.x, 0, p.z);
-      k.body.rotation.y = Math.atan2(p.z, -p.x);
-
-      // 軌跡: 0.25 秒おきの過去の位置をつなぐ
-      for (let i = 0; i < TRAIL; i++) {
-        const q = k.at(time - i * 0.25);
-        k.trailPos[i * 3] = q.x;
-        k.trailPos[i * 3 + 1] = 0.03;
-        k.trailPos[i * 3 + 2] = q.z;
+    const n = Math.min(state[S.TRACKS], pool.length);
+    const age = state[S.AGE]; // 最後のスキャンからの経過時間。そのぶん等速で進めて描く
+    for (let i = 0; i < pool.length; i++) {
+      const k = pool[i];
+      if (i >= n) {
+        if (k.group.visible) {
+          k.group.visible = false;
+          k.trail.visible = false;
+          k.label.style.opacity = '0';
+        }
+        continue;
       }
+      const o = i * TRACK_STRIDE;
+      const coast = tracks[o + 1] > 0;
+      const vx = tracks[o + 4];
+      const vz = tracks[o + 5];
+      const x = tracks[o + 2] + vx * age;
+      const z = tracks[o + 3] + vz * age;
+      const bw = clamp(tracks[o + 6] + 0.24, 0.62, 0.9);
+      const bh = clamp(tracks[o + 7] + 0.06, 1.2, 1.95);
+      const speed = tracks[o + 11];
+
+      k.group.visible = true;
+      k.group.position.set(x, 0, z);
+      k.group.rotation.y = Math.atan2(-vz, vx);
+      k.box.scale.set(bw, bh, bw);
+      k.box.position.y = bh / 2;
+      k.box.material = coast ? coastMat : trackMat;
+      // 線の長さ = 1.5 秒後までに進む距離
+      k.heading.scale.x = Math.max(0.3, speed * 1.5);
+      k.heading.material = k.box.material;
+
+      k.trail.visible = true;
+      const q = i * TRAIL * 2;
+      for (let j = 0; j < TRAIL; j++) {
+        k.trailPos[j * 3] = trails[q + j * 2];
+        k.trailPos[j * 3 + 1] = 0.03;
+        k.trailPos[j * 3 + 2] = trails[q + j * 2 + 1];
+      }
+      k.trailPos[0] = x;
+      k.trailPos[2] = z;
       k.trail.geometry.attributes.position.needsUpdate = true;
 
-      // ラベルを枠の上端に合わせる
-      v.set(p.x, 1.9, p.z).project(camera);
-      // 画面の外と、見出しの文字に重なる位置（広い画面の左側）では隠す
-      const overText = w >= 920 && v.x * 0.5 + 0.5 < 0.5;
-      const visible = v.z < 1 && Math.abs(v.x) < 1.05 && Math.abs(v.y) < 1.05 && !overText;
+      const id = String(tracks[o]).padStart(2, '0');
+      const text = coast
+        ? `ID ${id}<span>predicting ${(tracks[o + 8] * 0.1).toFixed(1)} s</span>`
+        : `ID ${id}<span>person ${speed.toFixed(1)} m/s</span>`;
+      if (text !== k.text) {
+        k.text = text;
+        k.label.innerHTML = text;
+        k.label.classList.toggle('coast', coast);
+      }
+      // ラベルを枠の上端に合わせる。画面の外と、文字やパネルに重なる位置では隠す
+      v.set(x, bh + 0.12, z).project(camera);
+      const px = (v.x * 0.5 + 0.5) * w;
+      const py = (-v.y * 0.5 + 0.5) * h;
+      const over = blocked.some((b) => px > b.l && px < b.r && py > b.t && py < b.b);
+      const visible = v.z < 1 && Math.abs(v.x) < 1.05 && Math.abs(v.y) < 1.05 && !over;
       k.label.style.opacity = visible ? '' : '0';
-      k.label.style.transform = `translate(${((v.x * 0.5 + 0.5) * w).toFixed(1)}px, ${((-v.y * 0.5 + 0.5) * h).toFixed(1)}px) translate(-50%, -130%)`;
+      k.label.style.transform = `translate(${px.toFixed(1)}px, ${py.toFixed(1)}px) translate(-50%, -130%)`;
     }
   };
 
   // テーマ（ダーク / ライト）に合わせて色と重ね方を切り替える
   const applyTheme = () => {
     const light = getComputedStyle(document.documentElement).colorScheme.includes('light');
-    mat.uniforms.uC0.value.set(cssVar('--pc-ground'));
-    mat.uniforms.uC1.value.set(cssVar('--pc-low'));
-    mat.uniforms.uC2.value.set(cssVar('--pc-mid'));
-    mat.uniforms.uC3.value.set(cssVar('--pc-high'));
-    mat.uniforms.uBase.value = light ? 1.25 : 1;
+    const u = mat.uniforms;
+    u.uC0.value.set(cssVar('--pc-ground'));
+    u.uC1.value.set(cssVar('--pc-low'));
+    u.uC2.value.set(cssVar('--pc-mid'));
+    u.uC3.value.set(cssVar('--pc-high'));
+    u.uMove.value.set(cssVar('--accent-text'));
+    u.uStatic.value.set(cssVar('--accent-2'));
+    u.uBase.value = light ? 1.25 : 1;
+    u.uLight.value = light ? 1 : 0;
     mat.blending = light ? THREE.NormalBlending : THREE.AdditiveBlending;
     mat.needsUpdate = true;
     guideMat.color.set(cssVar('--pc-ground'));
     const line = new THREE.Color(cssVar('--accent-text'));
     trackMat.color.copy(line);
-    bodyMat.color.copy(line);
-    for (const k of walkers) {
+    coastMat.color.copy(line);
+    navMat.color.set(cssVar('--accent-2'));
+    pingMat.color.set(cssVar('--accent-2'));
+    costMat.uniforms.uLow.value.set(cssVar('--accent-2'));
+    costMat.uniforms.uHigh.value.set(cssVar('--cost-high'));
+    for (const k of pool) {
       for (let i = 0; i < TRAIL; i++) {
         k.trailCol.set([line.r, line.g, line.b, 0.75 * (1 - i / (TRAIL - 1)) ** 1.5], i * 4);
       }
@@ -537,19 +606,24 @@ const setupLidar = async () => {
   };
   applyTheme();
 
-  // 文字が左にあるので、広い画面ではシーンの中心を右に寄せる
+  // 文字が左にあるので、広い画面ではシーンの中心を右に寄せる。
+  // 狭い画面の操作モードでは、下にパネルが来るので上に寄せる
   const resize = () => {
     const w = canvas.clientWidth;
     const h = canvas.clientHeight;
+    if (!w || !h) return;
     renderer.setSize(w, h, false);
-    camera.aspect = w / Math.max(1, h);
+    camera.aspect = w / h;
     if (w >= 920) camera.setViewOffset(w, h, -w * 0.17, h * 0.03, w, h);
-    else camera.setViewOffset(w, h, 0, -h * 0.12, w, h);
+    else camera.setViewOffset(w, h, 0, labOn ? h * 0.2 : -h * 0.12, w, h);
     camera.updateProjectionMatrix();
     mat.uniforms.uScale.value = Math.min(h, 980) * 0.055;
+    measureBlocked();
   };
 
-  // マウスの位置で少しだけ視点が動く
+  // ----- 視点。ふだんは自動でゆっくり動き、操作モードではドラッグで回す -----
+  const view = { az: 0.42, el: 0.47, dist: small ? 40 : 33, x: 0, z: 0 }; // いま描いている視点
+  const orbit = { az: 0.42, el: 0.47, dist: small ? 36 : 30 }; // 操作モードで指定された視点
   const pointer = { x: 0, y: 0, tx: 0, ty: 0 };
   if (!reduce) {
     hero.addEventListener('pointermove', (e) => {
@@ -564,54 +638,290 @@ const setupLidar = async () => {
     });
   }
 
-  const render = (time) => {
+  let time = 8;
+  const render = () => {
     pointer.x += (pointer.tx - pointer.x) * 0.045;
     pointer.y += (pointer.ty - pointer.y) * 0.045;
-    mat.uniforms.uSweep.value = (time * 1.9) % (Math.PI * 2);
     // 壁の裏に回り込まないよう、開けた側で左右に振る
-    const az = 0.42 + Math.sin(time * 0.05) * 0.5 + pointer.x * 0.22;
-    const el = 0.47 - pointer.y * 0.06;
-    const dist = small ? 40 : 33;
-    camera.position.set(Math.cos(az) * Math.cos(el) * dist, Math.sin(el) * dist, Math.sin(az) * Math.cos(el) * dist);
-    camera.lookAt(0, 0.8, 0);
+    const want = labOn
+      ? orbit
+      : { az: 0.42 + Math.sin(time * 0.05) * 0.5 + pointer.x * 0.22, el: 0.47 - pointer.y * 0.06, dist: small ? 40 : 33 };
+    const ease = labOn ? 0.2 : 0.06;
+    view.az += (want.az - view.az) * ease;
+    view.el += (want.el - view.el) * ease;
+    view.dist += (want.dist - view.dist) * ease;
+    const ex = state[S.X];
+    const ez = state[S.Z];
+    view.x += (ex - view.x) * 0.05;
+    view.z += (ez - view.z) * 0.05;
+    camera.position.set(
+      view.x + Math.cos(view.az) * Math.cos(view.el) * view.dist,
+      Math.sin(view.el) * view.dist,
+      view.z + Math.sin(view.az) * Math.cos(view.el) * view.dist
+    );
+    camera.lookAt(view.x, 0.8, view.z);
     camera.updateMatrixWorld();
-    placeWalkers(time);
+
+    ego.position.set(ex, 0, ez);
+    ego.rotation.y = -state[S.YAW];
+    rings.position.set(ex, 0, ez);
+    mat.uniforms.uEgo.value.set(ex, ez);
+    if (ping.visible) {
+      pingT += 0.03;
+      ping.scale.setScalar(0.3 + pingT * 1.2);
+      pingMat.opacity = Math.max(0, 1 - pingT);
+      ping.visible = pingT < 1;
+    }
+    placeTracks();
     renderer.render(scene, camera);
   };
 
+  // ----- 新しいスキャンが出るたびに、点群・経路・コストマップを描画用に写す -----
+  const fmt = (x) => Math.round(x).toLocaleString('en-US');
+  const fmtMs = (x) => (x > 50 ? '–' : x < 0.01 ? '< 0.01 ms' : `${x.toFixed(2)} ms`);
+  const setText = (sel, text) => {
+    const el = $(sel);
+    if (el && el.textContent !== text) el.textContent = text;
+  };
+  let hudAt = 0;
+  const onScan = () => {
+    const n = state[S.POINTS];
+    pointData.set(pointsSrc.subarray(0, n * POINT_STRIDE));
+    if (pointBuf.clearUpdateRanges) {
+      pointBuf.clearUpdateRanges();
+      pointBuf.addUpdateRange(0, n * POINT_STRIDE);
+    }
+    pointBuf.needsUpdate = true;
+    geo.setDrawRange(0, n);
+
+    const pn = state[S.PATH_N];
+    pathLine.visible = pn > 1;
+    if (pn > 1) {
+      for (let i = 0; i < pn; i++) {
+        pathPos[i * 3] = pathSrc[i * 2];
+        pathPos[i * 3 + 1] = 0.04;
+        pathPos[i * 3 + 2] = pathSrc[i * 2 + 1];
+      }
+      pathGeo.attributes.position.needsUpdate = true;
+      pathGeo.setDrawRange(0, pn);
+    }
+    goalMark.visible = state[S.HAS_GOAL] > 0;
+    goalMark.position.set(state[S.GX], 0, state[S.GZ]);
+
+    if (costOn) {
+      for (let i = 0; i < GRID * GRID; i++) costData[i * 4] = costSrc[i];
+      costTex.needsUpdate = true;
+    }
+
+    // 数値の表示は 1 秒に 2 回だけ書き換える（毎回だと数字がちらつく）
+    const now = performance.now();
+    if (now - hudAt < 480) return;
+    hudAt = now;
+    setText('.hud-pts', `${fmt(n)} pts`);
+    setText('.hud-tracks', `${fmt(state[S.TRACKS])} tracks`);
+    setText('.hud-ms', `Rust/Wasm ${fmtMs(state[S.MS + 5])}`);
+    if (!labOn) return;
+    setText('#lab-v1', trf('lab.v1', fmt(state[S.RAYS]), fmt(n)));
+    setText('#lab-v2', trf('lab.v2', fmt(state[S.GROUND])));
+    setText('#lab-v3', trf('lab.v3', fmt(state[S.CLUSTERS])));
+    setText('#lab-v4', trf('lab.v4', fmt(state[S.TRACKS])));
+    setText('#lab-v5', trf('lab.v5', state[S.HAS_GOAL] > 0 ? state[S.NAV] : 0, state[S.REMAIN].toFixed(1)));
+    for (let i = 0; i < 6; i++) setText(`#lab-t${i + 1}`, fmtMs(state[S.MS + i]));
+    measureBlocked();
+  };
+
+  // ----- 描画ループ。ヒーローが画面に見えている間だけ動かす -----
+  const clock = new THREE.Clock();
+  let raf = 0;
+  let onScreen = true;
+  let failures = 0;
+  const frame = () => {
+    const dt = Math.min(clock.getDelta(), 0.05);
+    time += dt;
+    try {
+      const scanned = sim.tick(dt);
+      refresh(); // tick の中でメモリが拡張されることがあるので、読む前に確かめる
+      if (scanned) onScan();
+      render();
+    } catch (e) {
+      // 処理が異常終了したら最初の状態からやり直す。繰り返すようなら止める
+      console.error(e);
+      if (++failures > 2) return;
+      sim.reset();
+      refresh(true);
+    }
+    raf = requestAnimationFrame(frame);
+  };
+  // 動きを減らす設定では、操作モードのときだけ動かす
+  const shouldRun = () => onScreen && (!reduce || labOn);
+  const sync = () => {
+    cancelAnimationFrame(raf);
+    raf = 0;
+    if (shouldRun()) {
+      clock.getDelta();
+      raf = requestAnimationFrame(frame);
+    } else if (onScreen) {
+      render();
+    }
+  };
+
+  // ----- 操作モードの UI -----
+  const hint = $('#lab-hint');
+  let hintTimer = 0;
+  const flashHint = (key) => {
+    if (!hint) return;
+    hint.dataset.i18n = key;
+    hint.innerHTML = tr(key);
+    hint.classList.toggle('warn', key !== 'lab.hint');
+    clearTimeout(hintTimer);
+    if (key !== 'lab.hint') hintTimer = setTimeout(() => flashHint('lab.hint'), 2400);
+  };
+  const press = (buttons, active) => buttons.forEach((b) => b.setAttribute('aria-pressed', String(b === active)));
+  const setCost = (on) => {
+    costOn = on;
+    costPlane.visible = on;
+    sim.show_costmap(on ? 1 : 0);
+    $('#lab-cost')?.setAttribute('aria-pressed', String(on));
+  };
+  const setLab = (on) => {
+    labOn = on;
+    hero.classList.toggle('lab-on', on);
+    $('#lab-open')?.setAttribute('aria-expanded', String(on));
+    if (on) {
+      orbit.az = view.az;
+      orbit.el = view.el;
+      hero.scrollIntoView({ block: 'start' });
+    } else {
+      // 閉じたら、表示を元に戻してロボットを最初の位置へ帰す
+      mat.uniforms.uMode.value = 0;
+      press([...document.querySelectorAll('[data-view]')], $('[data-view="0"]'));
+      setCost(false);
+      sim.set_goal(0, 0);
+    }
+    hudAt = 0;
+    resize();
+    sync();
+  };
+  if (lab) {
+    $('#lab-open')?.addEventListener('click', () => setLab(!labOn));
+    $('#lab-close')?.addEventListener('click', () => {
+      setLab(false);
+      $('#lab-open')?.focus();
+    });
+    hero.addEventListener('keydown', (e) => e.key === 'Escape' && labOn && setLab(false));
+    const viewBtns = [...document.querySelectorAll('[data-view]')];
+    viewBtns.forEach((b) =>
+      b.addEventListener('click', () => {
+        mat.uniforms.uMode.value = Number(b.dataset.view);
+        press(viewBtns, b);
+      })
+    );
+    const toolBtns = [...document.querySelectorAll('[data-tool]')];
+    toolBtns.forEach((b) =>
+      b.addEventListener('click', () => {
+        tool = b.dataset.tool;
+        press(toolBtns, b);
+      })
+    );
+    $('#lab-cost')?.addEventListener('click', () => setCost(!costOn));
+    $('#lab-zoom-in')?.addEventListener('click', () => (orbit.dist = clamp(orbit.dist * 0.8, 12, 60)));
+    $('#lab-zoom-out')?.addEventListener('click', () => (orbit.dist = clamp(orbit.dist * 1.25, 12, 60)));
+    $('#lab-reset')?.addEventListener('click', () => {
+      sim.reset();
+      sim.show_costmap(costOn ? 1 : 0);
+      for (let i = 0; i < 40; i++) sim.tick(0.05);
+      refresh(true);
+      hudAt = 0;
+      onScan();
+    });
+
+    // 地面のクリック位置を求める
+    const caster = new THREE.Raycaster();
+    const ndc = new THREE.Vector2();
+    const ground = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+    const hit = new THREE.Vector3();
+    const act = (e) => {
+      const r = canvas.getBoundingClientRect();
+      ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+      caster.setFromCamera(ndc, camera);
+      if (!caster.ray.intersectPlane(ground, hit)) return;
+      const ok =
+        tool === 'goal' ? sim.set_goal(hit.x, hit.z) : tool === 'walker' ? sim.add_walker(hit.x, hit.z) : sim.add_obstacle(hit.x, hit.z);
+      if (!ok) {
+        flashHint(tool === 'goal' ? 'lab.no.goal' : 'lab.no.place');
+        return;
+      }
+      ping.position.set(hit.x, 0, hit.z);
+      ping.visible = true;
+      pingT = 0;
+    };
+
+    // ドラッグで視点を回す。ほとんど動かさずに離したらクリックとして扱う。2 本指は拡大・縮小
+    const touches = new Map();
+    let moved = 0;
+    let pinch = 0;
+    canvas.addEventListener('pointerdown', (e) => {
+      if (!labOn) return;
+      try {
+        canvas.setPointerCapture(e.pointerId);
+      } catch (err) {}
+      touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      moved = touches.size > 1 ? 99 : 0;
+      pinch = 0;
+    });
+    canvas.addEventListener('pointermove', (e) => {
+      const p = touches.get(e.pointerId);
+      if (!labOn || !p) return;
+      const dx = e.clientX - p.x;
+      const dy = e.clientY - p.y;
+      p.x = e.clientX;
+      p.y = e.clientY;
+      if (touches.size === 2) {
+        const [a, b] = [...touches.values()];
+        const d = Math.hypot(a.x - b.x, a.y - b.y);
+        if (pinch) orbit.dist = clamp((orbit.dist * pinch) / d, 12, 60);
+        pinch = d;
+        return;
+      }
+      moved += Math.abs(dx) + Math.abs(dy);
+      if (moved < 6) return;
+      orbit.az += dx * 0.006;
+      orbit.el = clamp(orbit.el + dy * 0.005, 0.16, 1.4);
+    });
+    const release = (e) => {
+      if (!touches.delete(e.pointerId) || !labOn) return;
+      if (e.type === 'pointerup' && moved < 6) act(e);
+    };
+    canvas.addEventListener('pointerup', release);
+    canvas.addEventListener('pointercancel', release);
+  }
+
   $('.hud-beams') && ($('.hud-beams').textContent = `${beams} beams`);
-  $('.hud-pts') && ($('.hud-pts').textContent = `${n.toLocaleString('en-US')} pts`);
-  $('.hud-tracks') && ($('.hud-tracks').textContent = `${walkers.length} tracks`);
 
+  // 最初の画面から追跡が出ているよう、表示の前に 3 秒ぶん進めておく。
+  // 一度に進めると画面が止まるので、数フレームに分ける
+  for (let i = 0; i < 6; i++) {
+    for (let j = 0; j < 10; j++) sim.tick(0.05);
+    if (!reduce && i < 5) await new Promise((done) => setTimeout(done, 16));
+  }
+  refresh(true);
+  onScan();
   resize();
+  hero.classList.add('lidar-on');
 
-  // 動きを減らす設定では静止画を 1 枚だけ描く
-  const STILL = 8;
   const onTheme = () => {
     applyTheme();
-    if (reduce) render(STILL);
+    if (!raf) render();
   };
   new MutationObserver(onTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', onTheme);
-  window.addEventListener('resize', () => {
+  new ResizeObserver(() => {
     resize();
-    if (reduce) render(STILL);
-  });
-  if (reduce) {
-    render(STILL);
-    return;
-  }
-
-  // ヒーローが画面に見えている間だけ描画する
-  const clock = new THREE.Clock();
-  let raf = 0;
-  const loop = () => {
-    render(clock.getElapsedTime() + STILL);
-    raf = requestAnimationFrame(loop);
-  };
+    if (!raf) render();
+  }).observe(canvas);
   new IntersectionObserver(([entry]) => {
-    cancelAnimationFrame(raf);
-    if (entry.isIntersecting) loop();
+    onScreen = entry.isIntersecting;
+    sync();
   }).observe(hero);
 };
 

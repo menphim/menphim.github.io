@@ -24,6 +24,7 @@
   --pc-low: #38c6e0;
   --pc-mid: #c8f31d;
   --pc-high: #fff6b0;
+  --cost-high: #ff6b3d;
   --font: 'IBM Plex Sans', 'IBM Plex Sans JP', system-ui, sans-serif;
   --display: 'Archivo', 'IBM Plex Sans JP', system-ui, sans-serif;
   --mono: 'IBM Plex Mono', 'IBM Plex Sans JP', ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -52,6 +53,7 @@
     --pc-low: #1b8ea8;
     --pc-mid: #4f7d00;
     --pc-high: #1d2a00;
+    --cost-high: #c2410c;
     color-scheme: light;
   }
 }
@@ -77,6 +79,7 @@
   --pc-low: #1b8ea8;
   --pc-mid: #4f7d00;
   --pc-high: #1d2a00;
+  --cost-high: #c2410c;
   color-scheme: light;
 }
 
@@ -436,6 +439,13 @@ a {
   font-weight: 400;
 }
 
+/* 検出が途切れて、予測だけで位置を出している追跡 */
+.trk.coast {
+  color: var(--accent-text);
+  background: rgb(var(--veil) / 0.7);
+  box-shadow: inset 0 0 0 1px var(--accent-text);
+}
+
 /* 文字の後ろを沈め、下端は次のセクションへつなぐ */
 .hero-veil {
   position: absolute;
@@ -455,8 +465,16 @@ a {
   padding-top: 84px;
 }
 
-.hero-hud {
+.hero-top {
+  position: relative;
   align-self: flex-end;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 14px;
+}
+
+.hero-hud {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
@@ -497,6 +515,270 @@ a {
 
 .hero-copy {
   min-width: 0;
+}
+
+/* ---------- 操作モード ----------
+   hero-fx.js が、点群の処理が動き出したら .lidar-on を、操作モードの間は .lab-on を付ける */
+/* 見出しを押し下げないよう、HUD の下に重ねて置く */
+.lab-entry {
+  display: none;
+  position: absolute;
+  top: calc(100% + 14px);
+  right: 0;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  width: 300px;
+}
+
+.hero.lidar-on .lab-entry {
+  display: flex;
+}
+
+.hero.lab-on .lab-entry {
+  display: none;
+}
+
+.lab-note {
+  margin: 0;
+  font-size: 0.74rem;
+  line-height: 1.55;
+  text-align: right;
+  color: var(--muted);
+}
+
+.lab-entry .chip-btn {
+  background: rgb(var(--veil) / 0.5);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.lab-entry .chip-btn:hover {
+  background: var(--accent);
+}
+
+.lab {
+  display: none;
+  width: min(100%, 456px);
+  padding: 18px 20px 14px;
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  background: rgb(var(--veil) / 0.86);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.hero.lab-on .lab {
+  display: block;
+}
+
+.hero.lab-on .hero-copy {
+  display: none;
+}
+
+/* 点群を直接クリック・ドラッグできるよう、上に重なっている層は素通しにする */
+.hero.lab-on .hero-inner {
+  pointer-events: none;
+}
+
+.hero.lab-on .lab {
+  pointer-events: auto;
+}
+
+.hero.lab-on .lidar {
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.hero.lab-on .hero-veil {
+  opacity: 0.45;
+}
+
+.hero.lab-on .hero-main {
+  padding: 28px 0;
+}
+
+/* 画面の高さが足りないときは、数値の帯を隠してパネルを収める */
+@media (max-height: 860px) {
+  .hero.lab-on .stats {
+    display: none;
+  }
+}
+
+.lab-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.lab-title {
+  margin: 0;
+  font-family: var(--display);
+  font-stretch: 105%;
+  font-size: 1.12rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.lab-kicker {
+  flex: 1;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--accent-text);
+}
+
+.lab-lead {
+  margin: 0 0 12px;
+  font-size: 0.78rem;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+/* 処理の一覧: 名前 / 件数 / 所要時間 */
+.lab-stages {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+  font-size: 0.8rem;
+}
+
+.lab-stages li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) 84px;
+  align-items: baseline;
+  gap: 0 10px;
+  padding: 6px 0;
+  border-top: 1px solid var(--line);
+}
+
+.lab-stages .lab-total {
+  border-top-color: var(--line-2);
+}
+
+.lab-name {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.lab-name i {
+  margin-right: 9px;
+  font-family: var(--mono);
+  font-style: normal;
+  font-size: 0.62rem;
+  color: var(--accent-text);
+}
+
+.lab-val,
+.lab-ms {
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.lab-ms {
+  grid-column: 3;
+  color: var(--text);
+}
+
+.lab-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  margin-bottom: 10px;
+}
+
+.lab-label {
+  flex: 0 0 100%;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+/* どれか 1 つを選ぶボタンの並び */
+.seg {
+  display: inline-flex;
+  border: 1px solid var(--line-2);
+  border-radius: 2px;
+}
+
+.seg button {
+  padding: 6px 10px;
+  border: 0;
+  border-left: 1px solid var(--line-2);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.74rem;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.seg button:first-child {
+  border-left: 0;
+}
+
+.seg button:hover {
+  color: var(--text);
+}
+
+.seg button[aria-pressed='true'],
+.chip-btn[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.lab-hint {
+  margin: 0 0 12px;
+  min-height: 1.5em;
+  font-size: 0.74rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.lab-hint.warn {
+  color: var(--cost-high);
+}
+
+.lab-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.lab-foot a {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.lab-foot a:hover {
+  color: var(--text);
+}
+
+.lab-about {
+  margin: 10px 0 0;
+  font-size: 0.68rem;
+  color: var(--faint);
 }
 
 .kicker {
@@ -1732,6 +2014,15 @@ a {
   letter-spacing: 0.04em;
 }
 
+:root[lang='ja'] .lab-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+}
+
+:root[lang='ja'] .lab-val {
+  font-size: 0.72rem;
+}
+
 /* =========================================================
    Footer
    ========================================================= */
@@ -1927,6 +2218,65 @@ a {
   .trk {
     display: none;
   }
+
+  /* 操作モード: パネルを下に置き、上を点群の操作に空ける */
+  .hero.lab-on {
+    min-height: 100svh;
+  }
+
+  .hero.lab-on .hero-main {
+    padding-bottom: 18px;
+  }
+
+  .hero.lab-on .stats {
+    display: none;
+  }
+
+  .hero.lab-on .trk {
+    display: block;
+  }
+
+  .lab {
+    width: 100%;
+    padding: 14px 14px 12px;
+  }
+
+  .lab-lead,
+  .lab-about {
+    display: none;
+  }
+
+  .lab-stages {
+    margin-bottom: 10px;
+  }
+
+  .lab-stages li {
+    padding: 3px 0;
+  }
+
+  .lab-row {
+    flex-wrap: nowrap;
+    margin-bottom: 8px;
+  }
+
+  .lab-row .lab-label {
+    display: none;
+  }
+
+  .seg button,
+  .lab .chip-btn {
+    padding: 6px 8px;
+    font-size: 0.7rem;
+    white-space: nowrap;
+  }
+
+  .lab-hint {
+    margin-bottom: 8px;
+  }
+
+  .lab-foot {
+    padding-top: 8px;
+  }
 }
 
 @media (max-width: 700px) {
@@ -1951,6 +2301,26 @@ a {
   }
 
   .hero-hud span:nth-child(n + 3) {
+    display: none;
+  }
+
+  /* 狭い画面では見出しと重なるので、流れの中に置いてボタンだけにする */
+  .lab-entry {
+    position: static;
+    width: auto;
+  }
+
+  .lab-note,
+  .lab-kicker {
+    display: none;
+  }
+
+  .lab-title {
+    flex: 1;
+  }
+
+  /* 件数は省き、ロボットの状態だけ残す */
+  .lab-stages li:not(.lab-nav) .lab-val {
     display: none;
   }
 

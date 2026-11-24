@@ -69,12 +69,20 @@
         <div class="hero-veil" aria-hidden="true"></div>
 
         <div class="shell hero-inner">
-          <p class="hero-hud" aria-hidden="true">
-            <span>Simulated LiDAR</span>
-            <span class="hud-beams"></span>
-            <span class="hud-pts"></span>
-            <span class="hud-tracks"></span>
-          </p>
+          <div class="hero-top">
+            <p class="hero-hud" aria-hidden="true">
+              <span>Simulated LiDAR</span>
+              <span class="hud-beams"></span>
+              <span class="hud-pts"></span>
+              <span class="hud-tracks"></span>
+              <span class="hud-ms"></span>
+            </p>
+            <!-- 点群の処理が動いているときだけ表示する（hero-fx.js） -->
+            <div class="lab-entry">
+              <p class="lab-note" data-i18n="lab.note">The point cloud and the tracking boxes behind this text are computed live in your browser.</p>
+              <button class="chip-btn" id="lab-open" type="button" aria-expanded="false" aria-controls="lab" data-i18n="lab.open">▶ Drive the robot yourself</button>
+            </div>
+          </div>
 
           <div class="hero-main">
             <div class="hero-copy">
@@ -105,6 +113,48 @@
               </div>
             </div>
 
+            <!-- 操作モード: 点群の処理の内訳と、ロボット・歩行者・障害物の操作 -->
+            <div class="lab" id="lab" role="region" aria-labelledby="lab-title">
+              <div class="lab-head">
+                <h2 class="lab-title" id="lab-title" data-i18n="lab.title">What is running</h2>
+                <span class="lab-kicker">Rust → WebAssembly</span>
+                <button class="chip-btn" id="lab-close" type="button"><span data-i18n="lab.close">Close</span> ✕</button>
+              </div>
+              <p class="lab-lead" data-i18n="lab.lead">The LiDAR point cloud is simulated. The steps below take that point cloud as input and run ten times a second, inside this browser.</p>
+              <ol class="lab-stages">
+                <li><span class="lab-name"><i>01</i><span data-i18n="lab.s1">LiDAR scan</span></span><span class="lab-val" id="lab-v1"></span><span class="lab-ms" id="lab-t1"></span></li>
+                <li><span class="lab-name"><i>02</i><span data-i18n="lab.s2">Ground estimation</span></span><span class="lab-val" id="lab-v2"></span><span class="lab-ms" id="lab-t2"></span></li>
+                <li><span class="lab-name"><i>03</i><span data-i18n="lab.s3">Clustering</span></span><span class="lab-val" id="lab-v3"></span><span class="lab-ms" id="lab-t3"></span></li>
+                <li><span class="lab-name"><i>04</i><span data-i18n="lab.s4">Tracking</span></span><span class="lab-val" id="lab-v4"></span><span class="lab-ms" id="lab-t4"></span></li>
+                <li class="lab-nav"><span class="lab-name"><i>05</i><span data-i18n="lab.s5">Path planning</span></span><span class="lab-val" id="lab-v5"></span><span class="lab-ms" id="lab-t5"></span></li>
+                <li class="lab-total"><span class="lab-name" data-i18n="lab.total">Total per scan</span><span class="lab-ms" id="lab-t6"></span></li>
+              </ol>
+              <div class="lab-row">
+                <span class="lab-label" data-i18n="lab.view">Colour points by</span>
+                <div class="seg">
+                  <button type="button" data-view="0" aria-pressed="true" data-i18n="lab.view.height">Height</button>
+                  <button type="button" data-view="1" aria-pressed="false" data-i18n="lab.view.seg">Ground / objects</button>
+                  <button type="button" data-view="2" aria-pressed="false" data-i18n="lab.view.cluster">Cluster</button>
+                </div>
+                <button class="chip-btn" id="lab-cost" type="button" aria-pressed="false" data-i18n="lab.costmap">Cost map</button>
+              </div>
+              <div class="lab-row">
+                <span class="lab-label" data-i18n="lab.tool">Clicking the ground will</span>
+                <div class="seg">
+                  <button type="button" data-tool="goal" aria-pressed="true" data-i18n="lab.tool.goal">Move the robot</button>
+                  <button type="button" data-tool="walker" aria-pressed="false" data-i18n="lab.tool.walker">Add a pedestrian</button>
+                  <button type="button" data-tool="box" aria-pressed="false" data-i18n="lab.tool.box">Place an obstacle</button>
+                </div>
+              </div>
+              <p class="lab-hint" id="lab-hint" data-i18n="lab.hint" aria-live="polite">Click the ground to try it. Drag to rotate the view.</p>
+              <div class="lab-foot">
+                <button class="chip-btn" id="lab-reset" type="button" data-i18n="lab.reset">Reset</button>
+                <button class="chip-btn" id="lab-zoom-in" type="button" aria-label="Zoom in">＋</button>
+                <button class="chip-btn" id="lab-zoom-out" type="button" aria-label="Zoom out">－</button>
+                <a href="https://github.com/menphim/menphim.github.io/tree/master/perception" target="_blank" rel="noopener noreferrer" data-i18n="lab.source">Source code (Rust)</a>
+              </div>
+              <p class="lab-about" data-i18n="lab.about">A small implementation written for this page.</p>
+            </div>
           </div>
 
           <!-- Markdown から自動集計される数値 -->
